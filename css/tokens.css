@@ -6,8 +6,8 @@
   --rule: #34413d;
 
   --fluo: #cfd7cb;
-  --fluo-dim: #93a097;
-  --fluo-faint: #66736d;
+  --fluo-dim: #a3afa7;
+  --fluo-faint: #808d86;
   --me: #b9c7d6;
 
   --paper: #d7d0b8;
@@ -37,12 +37,13 @@
   --emerg-ink: #d49c88;
   --emerg-dim: #8a5446;
 
-  --f-serif: 'Nanum Myeongjo', 'Noto Serif KR', 'AppleMyungjo', 'Batang', serif;
+  --f-serif: 'Noto Serif KR', 'Nanum Myeongjo', 'AppleMyungjo', 'Batang', serif;
+  --f-display: 'Nanum Myeongjo', 'Noto Serif KR', serif;
   --f-sans: 'Nanum Gothic', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --f-hand: 'Nanum Pen Script', 'Nanum Myeongjo', cursive;
 
-  --fs-body: 1.0625rem;
-  --lh-body: 1.95;
+  --fs-body: 1.125rem;
+  --lh-body: 1.8;
   --fs-small: 0.875rem;
 
   --s1: 4px;

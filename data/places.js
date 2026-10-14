@@ -61,7 +61,9 @@
     const k = patrolKey(S.t);
     S.patrol[k] = S.patrol[k] || [];
     if (S.patrol[k].includes(S.place)) {
-      await g.p('아까 본 그대로다.');
+      const again = G.data.patrolAgain[S.place];
+      const n = (S.done['again_' + S.place] = (S.done['again_' + S.place] || 0) + 1);
+      await g.p(again[(n - 1) % again.length]);
       return;
     }
     S.patrol[k].push(S.place);
@@ -173,7 +175,8 @@
       run: async (g) => {
         const S = g.S;
         const n = (S.done.rest = (S.done.rest || 0) + 1);
-        await g.p(REST[(n - 1) % REST.length](S));
+        const pool = REST.concat(G.data.restMore || []);
+        await g.p(pool[(n - 1) % pool.length](S));
       },
     },
 

@@ -204,7 +204,7 @@
     for (const e of G.data.events) {
       if (s.fired[e.id] || s.t < T(e.at)) continue;
       s.fired[e.id] = true;
-      G.photo.override(EVENT_PHOTO[e.id] || null);
+      G.photo.override(EVENT_PHOTO[e.id] || e.photo || null);
       await G.scenes[e.scene](g);
       G.photo.override(null);
       G.ui.hud();

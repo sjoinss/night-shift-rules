@@ -151,13 +151,37 @@
     R.scroller.scrollTop = R.scroller.scrollHeight;
   }
 
+  // 상황에 따라 글자 속도를 바꾼다. 1보다 크면 느리게.
+  function pace(raw, cls, o) {
+    const S = G.S;
+    let k = o.s === 'slow' ? 1.8 : 1;
+    const c = cls || 'nar';
+    if (/mono|sys|act/.test(c)) k *= 0.45; // 화면, 공지: 기계적으로
+    if (/hand/.test(c)) k *= 1.35; // 손글씨: 쓰는 속도
+    if (c === 'me') k *= 0.8;
+    if (S) {
+      const t = S.t;
+      if (t < T('23:00')) k *= 0.85; // 고요 구간
+      if (t >= T('02:50') && t < T('03:30')) k *= 1.3; // 03:17 전후
+      if (t >= T('05:00') && t < T('05:35')) k *= 0.9; // 거짓 평온
+      if (S.consent >= 2) k *= 1.12;
+      if (S.consent >= 3) k *= 1.12;
+    }
+    if (R.blackLv) k *= 1.6;
+    // 손님의 격식체: 쉼표나 마침표에서 멈추지 않고 고르게
+    const even = c === 'say' && /(습니까|십시오|습니다)[.?"”]/.test(raw);
+    if (even) k *= 1.35;
+    return { k, even };
+  }
+
   async function line(raw, cls, o) {
     o = o || {};
     const { p, vis } = makeLine(raw, cls, o);
     R.log.append(p);
     if (!R.batchStart) R.batchStart = p;
     scrollDown();
-    const ms = BASE[G.settings.speed] * (o.s === 'slow' ? 1.8 : 1);
+    const pc = pace(raw, cls, o);
+    const ms = BASE[G.settings.speed] * pc.k;
     if (!ms || skipping) return;
     const walker = document.createTreeWalker(vis, NodeFilter.SHOW_TEXT);
     const nodes = [];
@@ -175,7 +199,8 @@
         nodes[i].nodeValue = chars.slice(0, k + 1).join('');
         if (k % 6 === 0) scrollDown();
         const ch = chars[k];
-        await sleep(/[.?!…]/.test(ch) ? ms * 7 : /[,]/.test(ch) ? ms * 4 : ms);
+        if (pc.even) await sleep(ms);
+        else await sleep(/[.?!…]/.test(ch) ? ms * 7 : /[,]/.test(ch) ? ms * 4 : ch === ' ' ? ms * 1.3 : ms);
       }
     }
     typing = false;

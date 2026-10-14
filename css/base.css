@@ -15,7 +15,6 @@ body {
   line-height: var(--lh-body);
   word-break: keep-all;
   overflow-wrap: anywhere;
-  -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
 
