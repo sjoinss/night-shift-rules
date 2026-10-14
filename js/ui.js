@@ -158,7 +158,7 @@
     const c = cls || 'nar';
     if (/mono|sys|act/.test(c)) k *= 0.45; // 화면, 공지: 기계적으로
     if (/hand/.test(c)) k *= 1.35; // 손글씨: 쓰는 속도
-    if (c === 'me') k *= 0.8;
+    if (/\bme\b/.test(c)) k *= 0.8;
     if (S) {
       const t = S.t;
       if (t < T('23:00')) k *= 0.85; // 고요 구간

@@ -44,6 +44,16 @@
     S().log.push({ t, c });
   }
 
+  // 고른 것은 옅은 바탕으로 남겨서, 그 아래 글과 구분되게
+  async function picked(t) {
+    // 메뉴 글귀 끝의 '(4분)' 같은 표시는 뗀다
+    t = t.replace(/\s*\(\d+분\)\s*$/, '').trim();
+    const c = (/^["“]/.test(t) ? 'me' : 'act') + ' pick';
+    await G.ui.line(t, c, { static: true });
+    pushLog(t, c);
+    G.ui.endBatch();
+  }
+
   function norm(l) {
     if (typeof l === 'string') l = { t: l };
     const t = tpl(l.t);
@@ -86,11 +96,8 @@
       const id = await G.ui.choose(list);
       const o = list.find((x) => x.id === id);
       const plain = G.fx.plain(o.label);
-      const isSay = /^["“]/.test(plain);
-      await G.ui.line(plain, isSay ? 'me' : 'act', { static: true });
-      pushLog(plain, isSay ? 'me' : 'act');
-      if (isSay) S().said.push(plain);
-      G.ui.endBatch();
+      await picked(plain);
+      if (/^["“]/.test(plain)) S().said.push(plain);
       return id;
     },
     async say(text) {
@@ -126,10 +133,7 @@
     async same(o) {
       const r = await G.ui.same(o);
       if (r.pressed) {
-        const t = G.engine.tpl(o.to);
-        await G.ui.line(t, /^["“]/.test(t) ? 'me' : 'act', { static: true });
-        pushLog(t, 'act');
-        G.ui.endBatch();
+        await picked(G.engine.tpl(o.to));
       }
       return r;
     },
@@ -289,7 +293,11 @@
       const pick = await G.ui.menu(buildMenu());
       if (pick.type === 'move') await doMove(pick.id);
       else if (pick.id.startsWith('group:')) await openGroup(pick.id.slice(6));
-      else await doAction(pick.id);
+      else {
+        const a = G.data.actions.find((x) => x.id === pick.id);
+        await picked(typeof a.label === 'function' ? a.label(S()) : a.label);
+        await doAction(pick.id);
+      }
     }
   }
 
