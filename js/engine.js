@@ -146,12 +146,14 @@
     },
   };
 
+  const durOf = (a) => (typeof a.dur === 'function' ? a.dur(S()) : a.dur);
+
   // ───────── 메뉴 구성 ─────────
   function buildMenu() {
     const s = S();
     const all = G.data.actions
       .filter((a) => a.place === s.place && (!a.avail || a.avail(s)))
-      .map((a) => ({ id: a.id, label: typeof a.label === 'function' ? a.label(s) : a.label, dur: a.dur, group: a.group }));
+      .map((a) => ({ id: a.id, label: typeof a.label === 'function' ? a.label(s) : a.label, dur: durOf(a), group: a.group }));
     // 서랍 속 서류는 '서랍을 연다' 하나로 묶는다
     const acts = all.filter((a) => !a.group);
     const grouped = all.filter((a) => a.group);
@@ -170,7 +172,7 @@
     const items = G.data.actions.filter((a) => a.group === name && a.place === s.place && (!a.avail || a.avail(s)));
     const id = await g.choose(
       items
-        .map((a) => ({ id: a.id, label: (typeof a.label === 'function' ? a.label(s) : a.label) + '  (' + a.dur + '분)' }))
+        .map((a) => ({ id: a.id, label: (typeof a.label === 'function' ? a.label(s) : a.label) + '  (' + durOf(a) + '분)' }))
         .concat([{ id: 'close', label: name + '을 닫는다' }])
     );
     if (id !== 'close') await doAction(id);
@@ -178,14 +180,15 @@
 
   async function doAction(id) {
     const a = G.data.actions.find((x) => x.id === id);
-    const c = crossing(a.dur);
+    const d = durOf(a);
+    const c = crossing(d);
     if (c) {
       S().t = c;
       G.ui.hud();
       if (a.id !== 'rest') await g.p({ t: '하던 일을 다 끝내지 못했다.', c: 'dim' });
       return;
     }
-    spend(a.dur);
+    spend(d);
     if (a.photo) G.photo.override(a.photo);
     await a.run(g);
     if (a.photo) G.photo.override(null);

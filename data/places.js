@@ -101,7 +101,21 @@
     (S) => (S.consent >= 2 ? '의자 뒤에서 누가 숨을 고른다. 돌아보면 벽이다.' : '종이컵에 남은 커피가 식어 있다.'),
   ];
 
-  // 각 행동: label, place, dur, avail(S), run(g)
+  function restLine(S) {
+    const n = (S.done.rest = (S.done.rest || 0) + 1);
+    const pool = REST.concat(G.data.restMore || []);
+    return pool[(n - 1) % pool.length](S);
+  }
+
+  // 다음에 무슨 일이 생기기까지 남은 분 (시간 이벤트, 자리 비움, 06:00)
+  G.untilNext = (S) => {
+    const at = G.data.events.filter((e) => !S.fired[e.id]).map((e) => T(e.at));
+    if (S.flags.awayPending && !S.flags.awayDone) at.push(T('23:30'));
+    at.push(T('06:00'));
+    return Math.min(...at.filter((t) => t > S.t)) - S.t;
+  };
+
+  // 각 행동: label, place, dur(분, 또는 S => 분), avail(S), run(g)
   G.data.actions = [
     // 경비실
     { id: 'cctv', place: '경비실', label: 'CCTV를 본다', dur: 1, photo: 'monitor', run: async (g) => g.p(cctv(g.S).map((t) => ({ t, c: 'mono' }))) },
@@ -175,12 +189,15 @@
       place: '경비실',
       label: '의자에 앉아 있는다',
       dur: 10,
-      run: async (g) => {
-        const S = g.S;
-        const n = (S.done.rest = (S.done.rest || 0) + 1);
-        const pool = REST.concat(G.data.restMore || []);
-        await g.p(pool[(n - 1) % pool.length](S));
-      },
+      run: async (g) => g.p(restLine(g.S)),
+    },
+    {
+      id: 'wait',
+      place: '경비실',
+      label: '무슨 일이 생길 때까지 앉아 있는다',
+      dur: (S) => G.untilNext(S),
+      avail: (S) => G.untilNext(S) > 10,
+      run: async (g) => g.p('의자에 등을 붙이고 시계만 본다.', restLine(g.S), { t: '시간이 한꺼번에 간다.', c: 'dim' }),
     },
 
     // 1층
