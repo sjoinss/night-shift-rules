@@ -219,10 +219,10 @@
 
 /* 깨짐 */
 .gl-g3 { letter-spacing: -0.05em; }
-.echo { color: var(--fluo-dim); }
-.echo.e1 { opacity: 0.6; }
-.echo.e2 { opacity: 0.35; }
-.echo.e3 { opacity: 0.15; }
+.echo { color: inherit; }
+.echo.e1 { opacity: 0.65; }
+.echo.e2 { opacity: 0.42; }
+.echo.e3 { opacity: 0.24; }
 
 /* ───────── 선택 영역 ───────── */
 #dock {
@@ -1019,3 +1019,9 @@ body.dark #stage::-webkit-scrollbar-thumb { background-color: #1a1a1a; }
 .admin-note .an-h { font-weight: 700; margin-bottom: 4px; }
 .choices.same .choice .lbl { transition: color 0.3s; }
 .quiet-choice { color: var(--fluo-faint); }
+
+/* 비상등 아래에서는 모든 글자가 같은 붉은빛 */
+body.emerg #log .ln.me,
+body.emerg #log .ln .hand,
+body.emerg #log .ln.hand { color: #e2b3a2; }
+body.emerg #log .ln.sys { border-top-color: #3a1610; }
