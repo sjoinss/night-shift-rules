@@ -1,0 +1,57 @@
+/* 경비실 벽 페인트(관공서 녹회색), 형광등 빛, 갱지, 인주, LCD */
+:root {
+  --wall: #1c2523;
+  --wall-lo: #151c1a;
+  --wall-hi: #26312e;
+  --rule: #34413d;
+
+  --fluo: #cfd7cb;
+  --fluo-dim: #93a097;
+  --fluo-faint: #66736d;
+  --me: #b9c7d6;
+
+  --paper: #d7d0b8;
+  --paper-2: #cbc3a8;
+  --paper-line: #b9b096;
+  --ink: #26241f;
+  --ink-soft: #5d574a;
+  --ink-blue: #263a6b;
+  --stamp: #9a2e25;
+
+  --grid: #c9d3d6;
+  --grid-line: #a9b8bd;
+
+  --note-cover: #3b3128;
+  --folder: #c4a467;
+  --ledger: #2b3550;
+
+  --lcd-case: #b8b4a4;
+  --lcd-case-lo: #8f8b7c;
+  --lcd: #8f9a7f;
+  --lcd-on: #1f261b;
+
+  --tag: #e6e5de;
+  --tag-band: #2d4a7a;
+
+  --emerg-bg: #160604;
+  --emerg-ink: #d49c88;
+  --emerg-dim: #8a5446;
+
+  --f-serif: 'Nanum Myeongjo', 'Noto Serif KR', 'AppleMyungjo', 'Batang', serif;
+  --f-sans: 'Nanum Gothic', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --f-hand: 'Nanum Pen Script', 'Nanum Myeongjo', cursive;
+
+  --fs-body: 1.0625rem;
+  --lh-body: 1.95;
+  --fs-small: 0.875rem;
+
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 36px;
+
+  --desk-w: 248px;
+  --measure: 34em;
+}

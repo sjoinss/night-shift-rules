@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>야간 근무 수칙</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700;800&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+</head>
+<body>
+
+<section id="title" class="screen">
+  <div class="title-inner">
+    <div class="lcd-case big"><div id="titleClock" class="lcd"></div></div>
+    <h1>야간 근무 수칙</h1>
+    <p id="titleNote" class="title-note"></p>
+    <nav class="title-nav">
+      <button id="btnStart" class="title-b" type="button">출근</button>
+      <button id="btnContinue" class="title-b" type="button" hidden>이어서</button>
+      <button id="btnTitleSettings" class="title-b quiet-b" type="button">설정</button>
+    </nav>
+  </div>
+</section>
+
+<div id="game" class="screen" hidden>
+  <aside id="desk">
+    <div class="lcd-case"><div id="clock" class="lcd" role="timer"></div></div>
+    <p id="where" class="where"></p>
+    <div id="tag" class="tag" hidden>
+      <span class="tag-org">금성상가 경비</span>
+      <span id="tagName" class="tag-name"></span>
+    </div>
+    <nav id="tabs" class="tabs" aria-label="서류">
+      <button type="button" data-doc="rules" class="slip slip-rules" hidden>수칙</button>
+      <button type="button" data-doc="mine" class="slip slip-mine" hidden>내 수첩</button>
+      <button type="button" data-doc="jung" class="slip slip-jung" hidden>정 씨 수첩</button>
+      <button type="button" data-doc="history" class="slip slip-hist" hidden>개정 이력</button>
+      <button type="button" data-doc="ledger" class="slip slip-ledger" hidden>출입 대장</button>
+    </nav>
+    <button id="btnSettings" class="desk-set" type="button">설정</button>
+  </aside>
+
+  <main id="stage">
+    <div id="log" role="log" aria-live="polite" aria-label="근무 기록"></div>
+    <div id="dock" tabindex="-1" aria-label="선택"></div>
+  </main>
+</div>
+
+<aside id="photo" class="photo" aria-hidden="true">
+  <img class="ph on" alt="">
+  <img class="ph" alt="">
+  <div class="grain"></div>
+</aside>
+
+<section id="ending" class="screen" hidden>
+  <div id="ending-card" class="ending-card"></div>
+</section>
+
+<div id="sheet" class="sheet" role="dialog" aria-modal="true" hidden>
+  <div id="paper" class="paper">
+    <button id="sheetClose" class="sheet-close" type="button">닫기</button>
+    <div id="paperBody"></div>
+  </div>
+</div>
+
+<section id="lab" class="screen lab" hidden>
+  <h2>효과 연구실</h2>
+  <button type="button">다시 굴리기</button>
+  <div class="lab-out"></div>
+</section>
+
+<script src="js/state.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/audio.js"></script>
+<script src="data/rules.js"></script>
+<script src="data/docs.js"></script>
+<script src="data/places.js"></script>
+<script src="data/scenes.js"></script>
+<script src="data/endings.js"></script>
+<script src="js/photo.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
