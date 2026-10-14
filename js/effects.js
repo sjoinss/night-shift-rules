@@ -31,6 +31,46 @@
   function g2(t, p) {
     return [...t].map((ch) => (isHangul(ch) && Math.random() < p ? pick(GL) : ch)).join('');
   }
+  // 마인크래프트 §k처럼: 정해진 글자 자리에서 아무 글자로 계속 바뀐다
+  const live = new Set();
+  let ticker = null;
+  const rndGlyph = () => (Math.random() < 0.85 ? String.fromCharCode(0xac00 + Math.floor(Math.random() * 11172)) : pick(['▓', '▒', '░', '█']));
+  function tick() {
+    for (const el of live) {
+      if (!el.isConnected) {
+        live.delete(el);
+        continue;
+      }
+      el.textContent = rndGlyph();
+    }
+    if (!live.size) {
+      clearInterval(ticker);
+      ticker = null;
+    }
+  }
+  function obfSpan(ch) {
+    const sp = document.createElement('span');
+    sp.className = 'obf';
+    sp.textContent = rndGlyph();
+    live.add(sp);
+    if (!ticker) ticker = setInterval(tick, lv() < 1 ? 170 : 55);
+    return sp;
+  }
+  // 글자 일부를 쉬지 않고 바뀌는 칸으로
+  function obfuscate(t, p, all) {
+    const frag = document.createDocumentFragment();
+    let buf = '';
+    for (const ch of t) {
+      if (ch.trim() && (all || Math.random() < p)) {
+        if (buf) frag.append(document.createTextNode(buf));
+        buf = '';
+        frag.append(obfSpan(ch));
+      } else buf += ch;
+    }
+    if (buf) frag.append(document.createTextNode(buf));
+    return frag;
+  }
+
   function g3(t) {
     return [...t].map((ch) => (/\s/.test(ch) ? ch : '▇')).join('');
   }
@@ -58,8 +98,8 @@
     const L = lv();
     for (const seg of parse(raw)) {
       if (!seg.g || L === 0) {
-        const txt = L && ambient ? g2(seg.t, ambient * L) : seg.t;
-        frag.append(document.createTextNode(txt));
+        if (L && ambient) frag.append(obfuscate(seg.t, ambient * L));
+        else frag.append(document.createTextNode(seg.t));
         continue;
       }
       const span = document.createElement('span');
@@ -69,7 +109,7 @@
           span.textContent = g1(seg.t, 0.4 * L);
           break;
         case 'g2':
-          span.textContent = g2(seg.t, 0.35 * L);
+          span.append(obfuscate(seg.t, 0.45 * L));
           break;
         case 'g3':
           span.textContent = L < 1 ? seg.t : g3(seg.t);
@@ -106,5 +146,5 @@
     return a.join('');
   }
 
-  G.fx = { decompose, hasJong, parse, plain, build, nameText, g1, g2, g3, level: lv, GL };
+  G.fx = { obfuscate, decompose, hasJong, parse, plain, build, nameText, g1, g2, g3, level: lv, GL };
 })();

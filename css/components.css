@@ -1025,3 +1025,21 @@ body.emerg #log .ln.me,
 body.emerg #log .ln .hand,
 body.emerg #log .ln.hand { color: #e2b3a2; }
 body.emerg #log .ln.sys { border-top-color: #3a1610; }
+
+/* 계속 바뀌는 글자: 폭이 고정이라 줄이 흔들리지 않는다 */
+.obf {
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+  overflow: hidden;
+  vertical-align: bottom;
+  white-space: nowrap;
+}
+
+/* 생각하는 줄: 서술과 다른 따뜻한 색, 살짝 들여서 */
+.ln.th {
+  color: var(--thought);
+  padding-left: 0.9em;
+  border-left: 2px solid rgba(217, 199, 156, 0.25);
+}
+body.emerg #log .ln.th { color: #f0c6b0; border-left-color: rgba(240, 198, 176, 0.3); }

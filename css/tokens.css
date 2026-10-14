@@ -57,3 +57,7 @@
   --desk-w: 248px;
   --measure: 34em;
 }
+:root {
+  /* 주인공의 생각: 형광등이 아니라 백열등 빛 */
+  --thought: #d9c79c;
+}
