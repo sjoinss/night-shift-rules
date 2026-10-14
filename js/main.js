@@ -16,6 +16,9 @@
     // 실제로 새벽에 접속하면 한 줄
     const h = new Date().getHours();
     if (h >= 2 && h < 5) $('#titleNote').textContent = '이 시간에 오셨네요.';
+    // 지난 밤이 어떻게 끝났는지 기억하는 타이틀
+    if (G.archive.last === 'C') $('#titleNote').textContent = '문 열어 두었습니다. 들어오세요.';
+    if (G.archive.last === 'B') $('#titleNote').textContent = '처음 뵙겠습니다.';
 
     const saved = G.loadSave();
     const cont = $('#btnContinue');

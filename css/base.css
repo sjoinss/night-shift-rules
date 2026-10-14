@@ -10,7 +10,7 @@ body {
     radial-gradient(120% 60% at 30% -10%, rgba(214, 228, 214, 0.07), transparent 60%),
     linear-gradient(180deg, transparent 70%, rgba(0, 0, 0, 0.25));
   color: var(--fluo);
-  font-family: var(--f-serif);
+  font-family: var(--f-body);
   font-size: var(--fs-body);
   line-height: var(--lh-body);
   word-break: keep-all;

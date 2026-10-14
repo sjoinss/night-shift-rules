@@ -123,6 +123,16 @@
     },
     blackout: (lv) => G.ui.blackout(lv),
     hold: (o) => G.ui.hold(o),
+    async same(o) {
+      const r = await G.ui.same(o);
+      if (r.pressed) {
+        const t = G.engine.tpl(o.to);
+        await G.ui.line(t, /^["“]/.test(t) ? 'me' : 'act', { static: true });
+        pushLog(t, 'act');
+        G.ui.endBatch();
+      }
+      return r;
+    },
     openDoc: (n, sub) => G.ui.openDoc(n, sub),
     // G9: 로그 끊김
     async cut() {
@@ -135,9 +145,13 @@
   // ───────── 메뉴 구성 ─────────
   function buildMenu() {
     const s = S();
-    const acts = G.data.actions
+    const all = G.data.actions
       .filter((a) => a.place === s.place && (!a.avail || a.avail(s)))
-      .map((a) => ({ id: a.id, label: typeof a.label === 'function' ? a.label(s) : a.label, dur: a.dur }));
+      .map((a) => ({ id: a.id, label: typeof a.label === 'function' ? a.label(s) : a.label, dur: a.dur, group: a.group }));
+    // 서랍 속 서류는 '서랍을 연다' 하나로 묶는다
+    const acts = all.filter((a) => !a.group);
+    const grouped = all.filter((a) => a.group);
+    if (grouped.length) acts.splice(Math.min(2, acts.length), 0, { id: 'group:' + grouped[0].group, label: grouped[0].group + '을 연다', dur: 0, group: true });
     const moves = G.data.floorOrder.map((id) => ({
       id,
       label: G.data.places[id].label,
@@ -145,6 +159,17 @@
       here: id === s.place,
     }));
     return { acts, moves };
+  }
+
+  async function openGroup(name) {
+    const s = S();
+    const items = G.data.actions.filter((a) => a.group === name && a.place === s.place && (!a.avail || a.avail(s)));
+    const id = await g.choose(
+      items
+        .map((a) => ({ id: a.id, label: (typeof a.label === 'function' ? a.label(s) : a.label) + '  (' + a.dur + '분)' }))
+        .concat([{ id: 'close', label: name + '을 닫는다' }])
+    );
+    if (id !== 'close') await doAction(id);
   }
 
   async function doAction(id) {
@@ -247,6 +272,7 @@
     await g.choose([{ id: 'n', label: '출근부를 덮는다' }]);
 
     if (!G.archive.endings.includes(code)) G.archive.endings.push(code);
+    G.archive.last = code;
     G.archive.runs++;
     G.saveArchive();
     G.clearSave();
@@ -262,6 +288,7 @@
       G.save();
       const pick = await G.ui.menu(buildMenu());
       if (pick.type === 'move') await doMove(pick.id);
+      else if (pick.id.startsWith('group:')) await openGroup(pick.id.slice(6));
       else await doAction(pick.id);
     }
   }

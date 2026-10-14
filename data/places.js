@@ -126,6 +126,7 @@
     },
     {
       id: 'jung',
+      group: '서랍',
       place: '경비실',
       label: (S) => (S.jungPages ? '정 씨 수첩을 마저 읽는다' : '서랍 속 낡은 수첩을 읽는다'),
       dur: 5,
@@ -139,6 +140,7 @@
     },
     {
       id: 'jungBack',
+      group: '서랍',
       place: '경비실',
       label: '수첩 뒷장을 펼친다',
       dur: 5,
@@ -151,6 +153,7 @@
     },
     {
       id: 'history',
+      group: '서랍',
       place: '경비실',
       label: '서랍 안쪽 서류철을 꺼낸다',
       dur: 5,

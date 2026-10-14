@@ -946,3 +946,76 @@ body.dark #stage::-webkit-scrollbar-thumb { background-color: #1a1a1a; }
 .act .lbl { font-weight: 500; }
 /* 왼쪽 책상 칸이 낮아져도 명찰, 시계가 눌리지 않게 */
 #desk > * { flex-shrink: 0; }
+
+/* ───────── 본문은 고딕(썰 게시글처럼), 인쇄된 서류만 명조 ───────── */
+.ln { font-weight: 400; letter-spacing: -0.005em; }
+.choice .lbl,
+.act .lbl { font-weight: 400; }
+.paper { font-family: var(--f-serif); }
+.paper.p-mine,
+.paper.p-jung,
+.paper.p-set { font-family: var(--f-body); }
+.rules-head h2,
+.h-title { font-family: var(--f-serif); }
+
+/* ───────── 한 화면에 들어가는 메뉴 ───────── */
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  max-width: 46rem;
+}
+.floors {
+  flex-direction: row;
+  align-self: stretch;
+  padding: 3px;
+  gap: 3px;
+}
+.floor {
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 4px 6px;
+  border-bottom: 0;
+  border-right: 0;
+  line-height: 1.25;
+  text-align: center;
+}
+.floor .dur { font-size: 0.72rem; }
+.floor.here .dur { color: #5c4a3a; }
+.acts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--s5);
+}
+.act {
+  min-height: 40px;
+  padding: 5px 8px 5px 0;
+  line-height: 1.45;
+}
+.act .lbl { max-width: none; flex: 0 1 auto; }
+@media (max-width: 640px) {
+  .acts { grid-template-columns: minmax(0, 1fr); }
+  .floor { min-height: 42px; padding: 3px 2px; font-size: 0.82rem; }
+}
+
+.rules-foot {
+  margin-top: var(--s4);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+.rules-foot p { margin: 0 0 2px; }
+.admin-note {
+  margin-top: var(--s5);
+  padding: 10px 12px;
+  border: 1px solid var(--ink-soft);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  rotate: -0.4deg;
+}
+.admin-note p { margin: 0; }
+.admin-note .an-h { font-weight: 700; margin-bottom: 4px; }
+.choices.same .choice .lbl { transition: color 0.3s; }
+.quiet-choice { color: var(--fluo-faint); }

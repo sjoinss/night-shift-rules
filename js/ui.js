@@ -273,6 +273,87 @@
       settle();
       keyMap = keys;
       R.dock.focus({ preventScroll: true });
+      // 대답을 많이 한 뒤에는 선택지가 잠깐 전부 '네.'로 보인다
+      if (G.S && G.S.consent >= 3 && G.fx.level() && Math.random() < 0.45) {
+        setTimeout(() => {
+          if (!ol.isConnected) return;
+          const vis = [...ol.querySelectorAll('.lbl > span[aria-hidden]')];
+          const old = vis.map((v) => v.textContent);
+          vis.forEach((v) => (v.textContent = '네.'));
+          setTimeout(() => vis.forEach((v, i) => v.isConnected && (v.textContent = old[i])), 380);
+        }, 600 + Math.random() * 900);
+      }
+    });
+  }
+
+  // 선택지가 하나씩 같은 말로 바뀐다. 아무것도 누르지 않고 버티면 'wait'
+  function same(o) {
+    return new Promise((resolve) => {
+      clearDock(true);
+      const ol = el('ol', 'choices same');
+      const timers = [];
+      let done = false;
+      const finish = (r) => {
+        if (done) return;
+        done = true;
+        timers.forEach(clearTimeout);
+        clearDock();
+        resolve(r);
+      };
+      const labels = [];
+      o.opts.forEach((op, i) => {
+        const li = el('li');
+        const b = el('button', 'choice');
+        b.type = 'button';
+        b.append(el('span', 'k', String(i + 1)));
+        const lab = el('span', 'lbl');
+        const sr = el('span', 'sr-only', op.label);
+        const v = el('span', null, op.label);
+        v.setAttribute('aria-hidden', 'true');
+        lab.append(sr, v);
+        b.append(lab);
+        b.addEventListener('click', () => finish({ pressed: op.id }));
+        li.append(b);
+        ol.append(li);
+        labels.push({ v, sr, from: op.label });
+      });
+      R.dock.append(ol);
+      settle();
+      R.dock.focus({ preventScroll: true });
+      const to = o.to;
+      const slow = G.fx.level() ? 1 : 0;
+      // 한 줄씩, 글자 단위로 같은 문장이 된다
+      labels.forEach((L, i) => {
+        const start = (o.delay || 1400) + i * 700 * (slow || 0.2);
+        const steps = 8;
+        for (let k = 1; k <= steps; k++) {
+          timers.push(
+            setTimeout(() => {
+              const n = Math.round((to.length * k) / steps);
+              const rest = [...L.from].slice(n).join('');
+              L.v.textContent = to.slice(0, n) + rest.slice(0, Math.max(0, L.from.length - n));
+              if (k === steps) {
+                L.v.textContent = to;
+                L.sr.textContent = to;
+              }
+            }, start + k * 70)
+          );
+        }
+      });
+      if (!G.settings.timer) {
+        timers.push(
+          setTimeout(() => {
+            const li = el('li');
+            const b = el('button', 'choice quiet-choice', '아무것도 누르지 않는다');
+            b.type = 'button';
+            b.addEventListener('click', () => finish({ waited: true }));
+            li.append(b);
+            ol.append(li);
+          }, (o.delay || 1400) + labels.length * 700 + 400)
+        );
+      } else {
+        timers.push(setTimeout(() => finish({ waited: true }), o.seconds * 1000));
+      }
     });
   }
 
@@ -281,6 +362,8 @@
     const b = container.querySelector('button, input');
     if (b) b.focus({ preventScroll: true });
   }
+
+  const SHORT = { '3F': '3층', '2F': '2층', '1F': '1층', 경비실: '경비실', B1: 'B1' };
 
   function menu(m) {
     return new Promise((resolve) => {
@@ -292,7 +375,7 @@
         const li = el('li');
         const b = el('button', 'act');
         b.type = 'button';
-        b.append(el('span', 'k', String(i + 1)), el('span', 'lbl', a.label), el('span', 'lead'), el('span', 'dur', a.dur + '분'));
+        b.append(el('span', 'k', String(i + 1)), el('span', 'lbl', a.label), el('span', 'lead'), el('span', 'dur', a.group ? '…' : a.dur + '분'));
         b.addEventListener('click', () => {
           clearDock();
           resolve({ type: 'act', id: a.id });
@@ -307,7 +390,8 @@
       m.moves.forEach((mv) => {
         const b = el('button', 'floor' + (mv.here ? ' here' : ''));
         b.type = 'button';
-        b.append(el('span', 'fl', mv.label), el('span', 'dur', mv.here ? '' : mv.dur + '분'));
+        b.append(el('span', 'fl', SHORT[mv.id] || mv.label), el('span', 'dur', mv.here ? '여기' : mv.dur + '분'));
+        b.setAttribute('aria-label', mv.label + (mv.here ? ', 지금 위치' : ', ' + mv.dur + '분'));
         if (mv.here) {
           b.disabled = true;
           b.setAttribute('aria-current', 'location');
@@ -318,7 +402,7 @@
           });
         floors.append(b);
       });
-      wrap.append(acts, floors);
+      wrap.append(floors, acts);
       R.dock.append(wrap);
       settle();
       keyMap = keys;
@@ -537,6 +621,12 @@
       ol.append(li);
     });
     box.append(ol);
+    const foot = el('div', 'rules-foot');
+    foot.append(
+      el('p', null, '※ 이 종이에 없는 일이 생기면, 아무 일도 없었던 것으로 한다.'),
+      el('p', null, '※ 수칙이 열한 개가 아니면, 처음부터 다시 센다.')
+    );
+    box.append(foot);
     return box;
   }
 
@@ -696,6 +786,13 @@
       t2.append(tr);
     });
     box.append(t2);
+    const memo = el('div', 'admin-note');
+    memo.append(
+      el('p', 'an-h', '관리사무소 알림'),
+      el('p', null, '야간 근무 중 연락이 끊긴 근무자는 무단 퇴사로 처리합니다.'),
+      el('p', null, '퇴직금은 지급하지 않습니다. 유가족 문의는 받지 않습니다.')
+    );
+    box.append(memo);
     return box;
   }
 
@@ -832,6 +929,7 @@
     pause,
     endBatch,
     choose,
+    same,
     menu,
     ask,
     hold,
