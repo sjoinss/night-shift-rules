@@ -46,6 +46,7 @@
     pieces: [],
     clues: [],
     patrol: {},
+    duty: {},
     done: {},
     said: [],
     log: [],

@@ -13,9 +13,11 @@
 - `data/places.js` 층별 행동, 순찰, CCTV 문구
 - `data/rules.js` 수칙 원문, 변조문, 변조 시각
 - `data/docs.js` 정 씨 수첩, 개정 이력, 출입 대장
+- `data/duty.js` 금일 근무표(시간마다 할 일), 파쇄 서류, 우편물, 열쇠함, 녹화 내용
 - `data/endings.js` 엔딩 문구와 판정 순서 (C > B > E > D > A)
 - `js/engine.js` 시간, 강제 이벤트, 엔딩 판정
 - `js/ui.js` 로그 타이핑, 선택지, 서류 시트, LCD 시계
+- `js/tasks.js` 파쇄, 우편물 분류, 열쇠 수 맞추기, 녹화 되감기 미니게임
 - `js/effects.js` G1~G4 깨짐, 이름 오염(G6)
 - `js/audio.js` Web Audio 합성음
 

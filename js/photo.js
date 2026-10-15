@@ -356,6 +356,8 @@
 
   // ───────── 장면들 ─────────
   const SC = {};
+  // 같은 장면의 아주 작은 차이 (키 'office|clock=0317|blind=1')
+  let V = {};
 
   SC.corridor2 = (ctx) => {
     const R = room(ctx, {
@@ -368,8 +370,15 @@
     hydrant(ctx, R, 1, 9.2);
     vent(ctx, R, 5.5);
     vent(ctx, R, 15.5);
-    // 바닥에 떨어진 임대 종이
-    poly(ctx, R.P, [[-0.9, 0.002, 5.6], [-0.6, 0.002, 5.5], [-0.55, 0.002, 5.85], [-0.86, 0.002, 5.95]], gs(150));
+    // 바닥에 떨어진 임대 종이 (누가 다시 붙여 두면 없어진다)
+    if (V.paper !== '0') poly(ctx, R.P, [[-0.9, 0.002, 5.6], [-0.6, 0.002, 5.5], [-0.55, 0.002, 5.85], [-0.86, 0.002, 5.95]], gs(150));
+    // 가운데 점포 유리 너머로 누가 서 있는 것 같은
+    if (V.shop === '1') {
+      ctx.save();
+      ctx.globalAlpha = 0.32;
+      figure(ctx, R.P, -1.27, 10.45, 14);
+      ctx.restore();
+    }
     exitSign(ctx, R, 24);
   };
 
@@ -395,7 +404,8 @@
   }
 
   SC.corridor3 = (ctx) => {
-    corridor3Base(ctx, false);
+    const R = corridor3Base(ctx, false);
+    if (V.fig === '1') figure(ctx, R.P, 0.28, 21.4, 16);
   };
 
   SC.corridor3_lit = (ctx) => {
@@ -462,7 +472,13 @@
     poly(ctx, P, faceRect(-2.6, 2.6, -1.4, 0, 12.99), gs(dawn ? 160 : 50));
     ctx.globalAlpha = 1;
     // 현관 매트
-    poly(ctx, P, [[-1.2, 0.003, 11], [1.2, 0.003, 11], [1.2, 0.003, 12.8], [-1.2, 0.003, 12.8]], gs(lum(12) * 255 * 0.2 + 4));
+    poly(ctx, P, [[-1.2, 0.003, 11], [1.2, 0.003, 11], [1.2, 0.003, 12.8], [-1.2, 0.003, 12.8]], gs(lum(12) * 255 * (V.wet === '1' ? 0.12 : 0.2) + 4));
+    if (V.out === '1') {
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      figure(ctx, P, 1.75, 13.6, 10);
+      ctx.restore();
+    }
     // 우편함
     const mx = -2.999;
     poly(ctx, P, wallRect(mx, 0.95, 2.02, 2.95, 6.25), gs(lum(4.5) * 255 * 0.25));
@@ -482,7 +498,7 @@
     // 우산꽂이
     const ux = -2.5;
     poly(ctx, P, faceRect(ux - 0.15, ux + 0.15, 0, 0.55, 10.2), gs(lum(10) * 255 * 0.35 + 8));
-    [-0.08, 0, 0.07].forEach((d, i) => line(ctx, P, [ux + d, 0.5, 10.25], [ux + d * 2.2, 0.95 + i * 0.05, 10.25], gs(lum(10) * 255 * 0.3 + 4), 3));
+    (V.wet === '1' ? [-0.08, 0, 0.07, 0.12] : [-0.08, 0, 0.07]).forEach((d, i) => line(ctx, P, [ux + d, 0.5, 10.25], [ux + d * 2.2, 0.95 + i * 0.05, 10.25], gs(lum(10) * 255 * 0.3 + 4), 3));
     // 엘리베이터
     const ex = 2.999;
     poly(ctx, P, wallRect(ex, 0, 2.3, 5.6, 7.4), gs(lum(6.5) * 255 * 0.3));
@@ -553,6 +569,13 @@
     });
     // 차
     const cz = 7.2;
+    if (V.car === 'c') {
+      // 차가 빠진 자리: 바퀴 자국 두 줄
+      ctx.globalAlpha = 0.35;
+      line(ctx, P, [2.3, 0.002, cz], [2.3, 0.002, cz + 4], 'rgba(0,0,0,0.9)', 3);
+      line(ctx, P, [3.6, 0.002, cz], [3.6, 0.002, cz + 4], 'rgba(0,0,0,0.9)', 3);
+      ctx.globalAlpha = 1;
+    } else {
     const cl = lum(cz) * 255;
     // 차 밑 그림자
     poly(ctx, P, [[1.9, 0.002, cz - 0.1], [3.9, 0.002, cz - 0.1], [3.9, 0.002, cz + 4.2], [1.9, 0.002, cz + 4.2]], 'rgba(0,0,0,0.6)');
@@ -574,6 +597,15 @@
     });
     poly(ctx, P, faceRect(2.15, 2.45, 0.6, 0.72, cz - 0.01), gs(cl * 0.6 + 30));
     poly(ctx, P, faceRect(3.45, 3.75, 0.6, 0.72, cz - 0.01), gs(cl * 0.6 + 30));
+    if (V.car === 'b') {
+      // 뒷유리 너머 운전석에 머리 하나
+      const hd = P(3.15, 1.2, cz + 0.65);
+      ctx.beginPath();
+      ctx.ellipse(hd[0], hd[1], 7, 8, 0, 0, Math.PI * 2);
+      ctx.fillStyle = gs(cl * 0.12 + 4);
+      ctx.fill();
+    }
+    }
     // 기둥 + 번호 + 바퀴 멈춤턱
     [4.5, 11, 17.5, 24].forEach((z, i) => {
       [-2.9, 2.9].forEach((x) => {
@@ -602,7 +634,22 @@
     const st = P(-1.2, 2.3, 4.5);
     glow(ctx, st[0], st[1], 150, 0.4);
     ctx.globalAlpha = 0.75;
-    for (let y = 1.07; y < 2.2; y += 0.055) line(ctx, P, [-1.55, y, 3.98], [-0.35, y, 3.98], '#000', 2);
+    // 블라인드 틈 너머에 무언가
+    if (V.peek === '1') {
+      const pk = P(-0.95, 1.62, 3.99);
+      ctx.save();
+      ctx.globalAlpha = 0.32;
+      ctx.beginPath();
+      ctx.ellipse(pk[0], pk[1], 15, 19, 0, 0, Math.PI * 2);
+      ctx.fillStyle = gs(22);
+      ctx.fill();
+      ctx.restore();
+    }
+    for (let y = 1.07; y < 2.2; y += 0.055) {
+      // 살 두 개가 벌어져 있다
+      if (V.blind === '1' && y > 1.55 && y < 1.67) continue;
+      line(ctx, P, [-1.55, y, 3.98], [-0.35, y, 3.98], '#000', 2);
+    }
     ctx.globalAlpha = 1;
     // 열쇠함
     poly(ctx, P, faceRect(0.5, 1.45, 1.05, 2.0, 3.99), gs(lum(3.9) * 255 * 0.3));
@@ -610,7 +657,7 @@
       for (let j = 0; j < 5; j++) {
         const x = 0.58 + i * 0.11;
         const y = 1.15 + j * 0.17;
-        poly(ctx, P, faceRect(x, x + 0.025, y, y + 0.05, 3.98), gs(i === 7 && j === 0 ? 30 : 120));
+        poly(ctx, P, faceRect(x, x + 0.025, y, y + 0.05, 3.98), gs(i === 7 && j === 0 && V.fk !== '1' ? 30 : 120));
       }
     // 벽시계
     const ck = P(0.05, 2.28, 3.99);
@@ -620,11 +667,17 @@
     ctx.fill();
     ctx.strokeStyle = gs(30);
     ctx.lineWidth = 2;
+    // 바늘은 그때 시각을 가리킨다. 3시 17분이 지나면 거기서 멈춰 있다
+    const hhmm = V.clock || '2200';
+    const hh = +hhmm.slice(0, 2) % 12;
+    const mm = +hhmm.slice(2);
+    const ha = ((hh + mm / 60) / 12) * Math.PI * 2 - Math.PI / 2;
+    const ma = (mm / 60) * Math.PI * 2 - Math.PI / 2;
     ctx.beginPath();
     ctx.moveTo(ck[0], ck[1]);
-    ctx.lineTo(ck[0] + 3, ck[1] - 10);
+    ctx.lineTo(ck[0] + Math.cos(ha) * 8, ck[1] + Math.sin(ha) * 8);
     ctx.moveTo(ck[0], ck[1]);
-    ctx.lineTo(ck[0] + 8, ck[1] + 4);
+    ctx.lineTo(ck[0] + Math.cos(ma) * 12, ck[1] + Math.sin(ma) * 12);
     ctx.stroke();
     // 벽에 붙은 수칙 종이
     poly(ctx, P, faceRect(-0.2, 0.25, 1.15, 1.75, 3.98), gs(165));
@@ -1323,9 +1376,19 @@
     const files = G.data.photoFiles || {};
     if (files[key]) return { src: files[key], file: true };
     if (!cache[key]) {
+      const [base, q] = key.split('|');
+      V = {};
+      (q || '').split(',').filter(Boolean).forEach((kv) => {
+        const [k, v] = kv.split('=');
+        V[k] = v;
+      });
       const c = canvas();
-      SC[key](c.getContext('2d'));
-      cache[key] = finish(c, key === 'blackout' ? 'red' : 'khaki', key.length * 131 + 17);
+      try {
+        SC[base](c.getContext('2d'));
+      } finally {
+        V = {};
+      }
+      cache[key] = finish(c, base === 'blackout' ? 'red' : 'khaki', base.length * 131 + 17);
     }
     return { src: cache[key] };
   }
@@ -1337,7 +1400,7 @@
   let front = 0;
 
   function show(key) {
-    if (!R || !key || key === current || !SC[key]) return;
+    if (!R || !key || key === current || !SC[key.split('|')[0]]) return;
     current = key;
     let u;
     try {
@@ -1376,6 +1439,33 @@
     return 'office';
   }
 
+  // 크게 바뀌지 않는다. 다시 봤을 때 "어?" 싶은 정도만
+  function variant(S, base) {
+    const T = G.toM;
+    const t = S.t;
+    const band = t < T('00:00') ? 'a' : t < T('03:17') ? 'b' : t < T('05:00') ? 'c' : 'd';
+    const v = [];
+    if (base === 'office') {
+      const [h, m] = G.clockParts(t);
+      const frozen = t >= T('03:17');
+      v.push('clock=' + (frozen ? '0317' : String(h).padStart(2, '0') + String(Math.floor(m / 10) * 10).padStart(2, '0')));
+      if (t >= T('01:00')) v.push('blind=1');
+      if (band === 'c') v.push('peek=1');
+      if (t >= T('04:30') && !S.hasFKey && !S.fDone && !S.fFailed) v.push('fk=1');
+    } else if (base === 'corridor2') {
+      if (band !== 'a') v.push('paper=0');
+      if (band === 'c') v.push('shop=1');
+    } else if (base === 'corridor3') {
+      if (band === 'c') v.push('fig=1');
+    } else if (base === 'lobby') {
+      if (S.flags.letChief) v.push('wet=1');
+      if (band === 'c') v.push('out=1');
+    } else if (base === 'parking') {
+      v.push('car=' + (band === 'a' ? 'a' : band === 'b' ? 'b' : 'c'));
+    }
+    return v.length ? base + '|' + v.join(',') : base;
+  }
+
   const visible = () => R && getComputedStyle(R.el).display !== 'none';
 
   G.photo = {
@@ -1405,7 +1495,7 @@
     },
     update() {
       if (!visible()) return;
-      show(over || (G.S && !G.S.ended ? placeKey(G.S) : 'exterior'));
+      show(over || (G.S && !G.S.ended ? variant(G.S, placeKey(G.S)) : 'exterior'));
     },
     show(key) {
       over = key;

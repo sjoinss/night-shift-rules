@@ -149,11 +149,20 @@
   const durOf = (a) => (typeof a.dur === 'function' ? a.dur(S()) : a.dur);
 
   // ───────── 메뉴 구성 ─────────
+  // 근무표에서 아직 안 한 일인가
+  function todo(a, s) {
+    if (a.id.startsWith('patrol_')) return G.duty.patrolTodo(s, a.place);
+    if (a.id === 'switch') return G.duty.pending(s, 'switch');
+    if (a.id === 'lockCheck') return true;
+    return !!a.task && G.duty.pending(s, a.task);
+  }
+
   function buildMenu() {
     const s = S();
     const all = G.data.actions
       .filter((a) => a.place === s.place && (!a.avail || a.avail(s)))
-      .map((a) => ({ id: a.id, label: typeof a.label === 'function' ? a.label(s) : a.label, dur: durOf(a), group: a.group }));
+
+      .map((a) => ({ id: a.id, label: typeof a.label === 'function' ? a.label(s) : a.label, dur: durOf(a), group: a.group, todo: todo(a, s) }));
     // 서랍 속 서류는 '서랍을 연다' 하나로 묶는다
     const acts = all.filter((a) => !a.group);
     const grouped = all.filter((a) => a.group);
@@ -163,6 +172,7 @@
       label: G.data.places[id].label,
       dur: G.moveCost(s.place, id),
       here: id === s.place,
+      todo: G.duty.floorTodo(s, id),
     }));
     return { acts, moves };
   }
@@ -192,6 +202,8 @@
     if (a.photo) G.photo.override(a.photo);
     await a.run(g);
     if (a.photo) G.photo.override(null);
+    if (a.task) G.duty.mark(S(), a.task);
+    G.ui.hud();
   }
 
   async function doMove(id) {
@@ -231,6 +243,13 @@
     if (s.t >= T('06:00')) {
       await G.scenes.morning(g);
       return ending(G.judgeEnding(s));
+    }
+
+    // 정 씨 수첩 뒷장을 읽고 문을 확인하지 않았다
+    if (s.flags.lockDue && !s.flags.lockDone && Date.now() >= s.flags.lockDue) {
+      s.flags.lockDone = true;
+      await G.scenes.doorUnlocked(g);
+      return true;
     }
 
     for (const e of G.data.events) {
@@ -289,11 +308,43 @@
     return true;
   }
 
+  // 메뉴에서 한참 고르지 않고 있으면 시간마다 한 번 무언가 들린다
+  function idleScare(s) {
+    const hr = G.patrolHour(s.t);
+    const L = G.data.idle && G.data.idle[hr];
+    if (!L || s.flags['idle_' + hr] || s.t < T('23:00')) return null;
+    return setTimeout(() => {
+      if (S() !== s || s.ended || document.body.classList.contains('sheet-open')) return;
+      s.flags['idle_' + hr] = true;
+      G.audio.sfx(L.sfx, 0.6);
+      const t = s.place === '경비실' ? L.in : L.out;
+      G.ui.staticLine(t, 'nar');
+      pushLog(t, 'nar');
+      G.ui.scrollDown();
+    }, 22000 + Math.random() * 14000);
+  }
+
+  // 메뉴가 떠 있는 동안 상황이 바뀌면 메뉴를 다시 그린다
+  let kickFn = null;
+
   async function loop() {
     while (!S().ended) {
       if (await forced()) continue;
       G.save();
-      const pick = await G.ui.menu(buildMenu());
+      // 문 확인 시한이 걸려 있으면, 고르지 않고 있어도 시간이 되면 끊는다
+      const s = S();
+      let tm;
+      const race = [G.ui.menu(buildMenu()), new Promise((r) => (kickFn = () => r({ type: 'late' })))];
+      if (s.flags.lockDue && !s.flags.lockDone) race.push(new Promise((r) => (tm = setTimeout(() => r({ type: 'late' }), Math.max(0, s.flags.lockDue - Date.now())))));
+      const idle = idleScare(s);
+      const pick = await Promise.race(race);
+      clearTimeout(tm);
+      clearTimeout(idle);
+      kickFn = null;
+      if (pick.type === 'late') {
+        G.ui.clearDock();
+        continue;
+      }
       if (pick.type === 'move') await doMove(pick.id);
       else if (pick.id.startsWith('group:')) await openGroup(pick.id.slice(6));
       else {
@@ -322,6 +373,9 @@
     pushLog,
     g,
     // 패널 등에서 남기는 한 줄
+    kick() {
+      if (kickFn) kickFn();
+    },
     note(t) {
       G.ui.staticLine(t, 'act');
       pushLog(t, 'act');

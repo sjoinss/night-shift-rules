@@ -115,7 +115,42 @@
     };
     R.tabs.querySelectorAll('[data-doc]').forEach((b) => (b.hidden = !show[b.dataset.doc]));
     document.body.classList.toggle('late', S.t >= T('03:30') && G.fx.level() > 0);
+    renderDuty(S);
     G.photo.update();
+  }
+
+  // ───────── 근무표 ─────────
+  // PC: 책상 칸에 늘 펼쳐 둔다. 좁은 화면: 한 줄로 접혀 있다가 누르면 펼친다.
+  function renderDuty(S) {
+    const box = R.duty;
+    if (!box) return;
+    box.hidden = !S.flags.hasRules || S.t < T('22:00');
+    if (box.hidden) return;
+    const v = G.duty.view(S);
+    const key = JSON.stringify(v);
+    if (box.dataset.key === key) return;
+    box.dataset.key = key;
+    box.textContent = '';
+    const left = v.rows.filter((r) => !r.done && !r.hand).length;
+    const head = el('button', 'duty-h');
+    head.type = 'button';
+    head.setAttribute('aria-expanded', box.classList.contains('open') ? 'true' : 'false');
+    head.append(el('span', 'duty-t', '근무표'), el('b', null, v.hour), el('span', 'duty-n', left ? '남은 일 ' + left : '다 함'));
+    head.addEventListener('click', () => {
+      box.classList.toggle('open');
+      head.setAttribute('aria-expanded', box.classList.contains('open') ? 'true' : 'false');
+    });
+    const ul = el('ul', 'duty-l');
+    v.rows.forEach((r) => {
+      const li = el('li', (r.done ? 'done' : '') + (r.hand ? ' hand' : ''));
+      if (r.floors) {
+        li.append(document.createTextNode(r.label + ' '));
+        r.floors.forEach((f) => li.append(el('span', 'pf' + (f.done ? ' done' : ''), f.f)));
+      } else li.append(document.createTextNode(r.label));
+      if (r.done) li.append(el('span', 'sr-only', ' 완료'));
+      ul.append(li);
+    });
+    box.append(head, ul);
   }
 
   // ───────── 로그 ─────────
@@ -210,6 +245,23 @@
   function endBatch() {
     skipping = false;
     typing = false;
+  }
+
+  // 미니게임: 본문에 붙는 덩어리, 선택 칸에 붙는 조작부
+  function block(node) {
+    R.log.append(node);
+    R.batchStart = node;
+    scrollDown();
+  }
+  function controls(node, keys) {
+    clearDock(true);
+    R.dock.append(node);
+    settle();
+    keyMap = keys || null;
+    R.dock.focus({ preventScroll: true });
+  }
+  function release() {
+    clearDock(true);
   }
 
   function staticLine(raw, cls) {
@@ -373,7 +425,7 @@
       const keys = {};
       m.acts.forEach((a, i) => {
         const li = el('li');
-        const b = el('button', 'act');
+        const b = el('button', 'act' + (a.todo ? ' todo' : ''));
         b.type = 'button';
         b.append(el('span', 'k', String(i + 1)), el('span', 'lbl', a.label), el('span', 'lead'), el('span', 'dur', a.group ? '…' : a.dur + '분'));
         b.addEventListener('click', () => {
@@ -388,7 +440,7 @@
       floors.setAttribute('role', 'group');
       floors.setAttribute('aria-label', '층 이동');
       m.moves.forEach((mv) => {
-        const b = el('button', 'floor' + (mv.here ? ' here' : ''));
+        const b = el('button', 'floor' + (mv.here ? ' here' : '') + (mv.todo ? ' todo' : ''));
         b.type = 'button';
         b.append(el('span', 'fl', SHORT[mv.id] || mv.label), el('span', 'dur', mv.here ? '여기' : mv.dur + '분'));
         b.setAttribute('aria-label', mv.label + (mv.here ? ', 지금 위치' : ', ' + mv.dur + '분'));
@@ -632,29 +684,6 @@
 
   function renderMine(S, box) {
     if (S.journalOpened) box.append(el('p', 'm-hand big', '방문증 4719'));
-    // 할 일
-    const hr = G.patrolHour(S.t);
-    const pt = S.patrol[hr] || [];
-    const todo = el('ul', 'todo');
-    const item = (txt, done) => {
-      const li = el('li', done ? 'done' : '', txt);
-      if (done) li.append(el('span', 'sr-only', ' 완료'));
-      todo.append(li);
-    };
-    const pl = el('li', 'patrol-row');
-    pl.append(el('span', null, hr + '시 순찰 '));
-    ['B1', '1F', '2F', '3F'].forEach((f) => {
-      const s = el('span', pt.includes(f) ? 'done' : '', f);
-      pl.append(s, document.createTextNode(' '));
-    });
-    todo.append(pl);
-    item('우편물', !!S.done.mail);
-    item('분실물함', !!S.done.lost);
-    item('쓰레기통 3F', !!S.done.trash3);
-    item('쓰레기통 B1', !!S.done.trashB1);
-    item('일지', !!S.journalOpened);
-    box.append(todo);
-
     if (S.logged.length) {
       const ul = el('ul', 'logged');
       S.logged.forEach((k) => ul.append(el('li', null, G.data.facts[k].note)));
@@ -739,8 +768,31 @@
       back.id = 'jung-back';
       G.data.jungBack.forEach((t) => back.append(el('p', null, t)));
       box.append(back);
+      if (!S.flags.lockDue) watchLockNote(back.lastElementChild);
     }
     return box;
+  }
+
+  // "경비실 문 잠겼나 보고 와" 줄이 눈에 들어오면 그때부터 잰다
+  const LOCK_MS = 15000;
+  function watchLockNote(p) {
+    if (!('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver(
+      (es) => {
+        if (!es.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        const S = G.S;
+        if (!S || S.flags.lockDue) return;
+        S.flags.lockDue = Date.now() + LOCK_MS;
+        G.engine.kick();
+        // 계속 읽고 있으면 서류를 내려놓게 된다
+        setTimeout(() => {
+          if (docOpen && G.S === S && !S.flags.lockDone) closeDoc();
+        }, LOCK_MS);
+      },
+      { root: R.paper, threshold: 0.9 }
+    );
+    io.observe(p);
   }
 
   function renderHistory(S, box) {
@@ -884,6 +936,7 @@
       paper: $('#paper'),
       paperBody: $('#paperBody'),
       sheetClose: $('#sheetClose'),
+      duty: $('#duty'),
       blackLv: 0,
     };
     R.lcd = buildLCD(R.clock);
@@ -945,5 +998,8 @@
     makeLine,
     scrollDown,
     staticLine,
+    block,
+    controls,
+    release,
   };
 })();

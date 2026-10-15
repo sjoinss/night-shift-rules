@@ -158,6 +158,51 @@
     thud(t) {
       tone(70, t, 0.4, 0.25, 'sine');
     },
+    // 파쇄기 칼날: 낮은 갈림 + 종이 찢기는 소리
+    grind(t, v) {
+      burst(t, 0.2, 0.14 * v, 'lowpass', 900, 0.7, 0.01);
+      burst(t + 0.03, 0.14, 0.05 * v, 'bandpass', 3200, 2, 0.005);
+      tone(58 + Math.random() * 8, t, 0.18, 0.04 * v, 'sawtooth');
+    },
+    rewind(t, v) {
+      burst(t, 0.14, 0.06 * v, 'bandpass', 2400, 4, 0.01);
+      tone(1900 + Math.random() * 300, t, 0.1, 0.008 * v, 'square');
+    },
+    // 갈리는 소리 사이에 섞이는 아이 대답. 성대처럼 톱니파를 모음 대역으로 거른다
+    voiceHi(t, v) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(330, t);
+      o.frequency.linearRampToValueAtTime(290, t + 0.32);
+      const g = ctx.createGain();
+      env(g, t, 0.04, 0.22 * v, 0.34);
+      [500, 1850, 2600].forEach((f, i) => {
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = f;
+        bp.Q.value = 9;
+        const k = ctx.createGain();
+        k.gain.value = [1, 0.5, 0.25][i];
+        o.connect(bp).connect(k).connect(g);
+      });
+      g.connect(master);
+      o.start(t);
+      o.stop(t + 0.45);
+    },
+    // 위층 바닥을 걷는 발소리
+    steps(t, v) {
+      for (let i = 0; i < 5; i++) {
+        const d = t + i * 0.46 + Math.random() * 0.05;
+        tone(62 + Math.random() * 10, d, 0.14, 0.16 * v, 'sine');
+        burst(d, 0.06, 0.05 * v, 'lowpass', 500, 0.7, 0.004);
+      }
+    },
+    knock(t, v) {
+      [0, 0.42].forEach((d) => {
+        tone(95, t + d, 0.18, 0.3 * v, 'sine');
+        burst(t + d, 0.05, 0.12 * v, 'lowpass', 1200, 0.7, 0.002);
+      });
+    },
   };
 
   G.audio = {
