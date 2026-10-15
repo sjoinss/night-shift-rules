@@ -1448,7 +1448,7 @@
     if (base === 'office') {
       const [h, m] = G.clockParts(t);
       const frozen = t >= T('03:17');
-      v.push('clock=' + (frozen ? '0317' : String(h).padStart(2, '0') + String(Math.floor(m / 10) * 10).padStart(2, '0')));
+      v.push('clock=' + (frozen ? '0317' : String(h).padStart(2, '0') + String(Math.floor(m / 30) * 30).padStart(2, '0')));
       if (t >= T('01:00')) v.push('blind=1');
       if (band === 'c') v.push('peek=1');
       if (t >= T('04:30') && !S.hasFKey && !S.fDone && !S.fFailed) v.push('fk=1');

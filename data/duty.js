@@ -27,9 +27,9 @@
     0: ['patrol', 'trash3', 'journal'],
     1: ['patrol', 'keycount', 'trashB1'],
     2: ['patrol', 'tape', 'shred', 'switch'],
-    3: ['patrol', 'mail', 'journal'],
+    3: ['patrol', 'mail', 'trash3', 'journal'],
     4: ['patrol', 'F', 'shred', 'tape'],
-    5: ['patrol', 'keycount', 'trash3', 'journal', 'handover'],
+    5: ['patrol', 'keycount', 'journal', 'handover'],
   };
 
   const hourOf = (S) => G.patrolHour(S.t);
@@ -102,7 +102,20 @@
     };
   }
 
-  G.duty = { items, isDone, pending, open, mark, allDone, patrolTodo, floorTodo, nth, view, TASK };
+  function score(S) {
+    let done = 0;
+    let total = 0;
+    Object.keys(SCHED).forEach((h) =>
+      SCHED[h].forEach((id) => {
+        if (TASK[id].hand) return;
+        total++;
+        if (isDone(S, h, id)) done++;
+      })
+    );
+    return [done, total];
+  }
+
+  G.duty = { items, isDone, pending, open, mark, allDone, patrolTodo, floorTodo, nth, view, score, TASK };
 
   // ───────── 파쇄할 서류 ─────────
   const keepSheet = (g) => {
@@ -110,12 +123,33 @@
   };
   G.data.clues.sheet = { name: '근무 일지 한 장', text: '10/15. 칸마다 이상 없음. 03:17 칸만 비어 있다.' };
 
+  // 지난 판이 있으면, 그 밤의 일지가 폐기 서류 사이에 끼어 있다
+  function lastNight() {
+    const A = G.archive;
+    if (!A || !A.runs) return [];
+    const end = {
+      A: ['06:00  인계 완료'],
+      B: ['06:00  ▇▇▇▇'],
+      C: ['00:19  문 열어 드림', '이후 기록 없음'],
+      D: ['06:00  수칙 12번 기재'],
+      E: ['04:48  F층 정민수 확인', '06:00  인계 완료'],
+    }[A.last] || ['06:00'];
+    return [
+      {
+        head: '근무 일지  10/14',
+        lines: ['야간  {{surname}}○○', '22:00  순찰  이상 없음', '03:17  ', ...end],
+        after: [{ t: '어젯밤 일지다. 출근부에 적힌 어젯밤 근무자는 정 씨인데, 칸마다 당신 글씨로 채워져 있다.', c: 'th', w: 500 }],
+      },
+    ];
+  }
+
   const SHRED = [
     // 23시
     (S) => [
       { head: '관리비 고지서 (사본)', lines: ['203호 행복분식', '미납 3개월', '연락 안 됨. 다음 달 명도.'] },
       { head: '출입 대장  9월', lines: ['09/14  21:50  야간 정  출근', '09/15  06:00  주간 오  출근', '09/15  21:50  야간 정  출근', '09/16  06:00  주간 오  출근'] },
       { head: '전단', lines: ['금성상가 2층 점포 임대', '보증금 조정 가능', '문의 관리사무소'] },
+      ...lastNight(),
       {
         head: '근무 일지  10/15',
         lines: ['야간  {{surname}}○○', '22:00  순찰  이상 없음', '23:00  순찰  이상 없음', '00:00  순찰  이상 없음', '01:00  순찰  이상 없음'],
@@ -303,6 +337,7 @@
       { id: 'away', label: '문에서 물러난다' },
     ]);
     if (c === 'peek') {
+      g.flag('peeked');
       await g.p('허리를 굽혀 구멍에 눈을 댄다.');
       await G.task.peek(g);
       await g.p(

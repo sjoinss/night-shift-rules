@@ -23,7 +23,13 @@
       b.classList.add('down');
     };
     const off = () => {
-      if (st.down && performance.now() - st.at < 160) st.nudge += 1;
+      if (st.down && performance.now() - st.at < 160) {
+        st.nudge += 1;
+        // 짧게 누르면 밑줄이 조금 찼다 빠진다. 더 누르고 있으라는 신호
+        b.classList.remove('tap');
+        void b.offsetWidth;
+        b.classList.add('tap');
+      }
       st.down = false;
       b.classList.remove('down');
     };

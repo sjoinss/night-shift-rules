@@ -1421,3 +1421,19 @@ body.emerg .art-pre { color: var(--emerg-ink); }
 .jpage .jl.hand { color: var(--ink-blue); }
 /* 엘리베이터 층 표시 */
 .flr .lcd { width: 84px; }
+
+/* 누르고 있어야 하는 버튼: 누르는 동안 밑줄이 차오른다. 짧게 누르면 금방 빠진다 */
+.hold-go { position: relative; overflow: hidden; }
+.hold-go::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 0;
+  background: var(--fluo-dim);
+  transition: width 0.25s ease-out;
+}
+.hold-go.down::after { width: 100%; transition: width 1.2s linear; }
+.hold-go.tap::after { animation: tapfill 0.5s ease-out; }
+@keyframes tapfill { 30% { width: 22%; } 100% { width: 0; } }

@@ -288,7 +288,8 @@
     G.photo.show(ENDING_PHOTO[code]);
     G.audio.ambient(false);
     G.ui.blackout(0);
-    await g.p(E.lines);
+    if (code === 'A' && s.flags.peeked && E.peeked) await g.p(E.lines.slice(0, -1), E.peeked, E.lines.slice(-1));
+    else await g.p(E.lines);
     if (code === 'D') {
       const r = await g.ask({ max: 40, placeholder: '12. ', button: '적는다', label: '새 수칙', allowEmpty: true });
       const rule = r || '…';
@@ -304,7 +305,8 @@
     G.clearSave();
     const docs = [s.jungPages >= 3, s.jungBack, s.readHistory, s.readLedger].filter(Boolean).length;
     const seen = Object.keys(s.mutated).filter((n) => s.rulesSeen.includes(+n)).length;
-    G.ui.showEnding(code, { seen, docs, time: G.fmt(s.t) });
+    const [dd, dt] = G.duty.score(s);
+    G.ui.showEnding(code, { seen, docs, time: G.fmt(s.t), duty: dd + ' / ' + dt });
     return true;
   }
 

@@ -55,6 +55,42 @@
   }
 
   // ───────── ?debug=1 ─────────
+  // [이름, 시각, 장소, 다시 할 일, 다시 일으킬 사건]
+  const JUMPS = [
+    ['우편함 1', '22:05', '1F', 'mail', null],
+    ['파쇄 1', '23:05', '경비실', 'shred', null],
+    ['열쇠 1 + 열쇠 구멍', '01:05', '경비실', 'keycount', null],
+    ['녹화 1', '02:12', '경비실', 'tape', null],
+    ['파쇄 2', '02:12', '경비실', 'shred', null],
+    ['우편함 2', '03:30', '1F', 'mail', null],
+    ['파쇄 3', '04:05', '경비실', 'shred', null],
+    ['녹화 2', '04:05', '경비실', 'tape', null],
+    ['열쇠 2', '05:02', '경비실', 'keycount', null],
+    ['엘리베이터 22:50', '22:49', '1F', null, 'elev'],
+    ['정전 03:17', '03:16', '경비실', null, 'b0317'],
+    ['노크 04:50', '04:49', '경비실', null, 'knock'],
+  ];
+  // 그 일을 처음 하는 것처럼 되돌린다
+  const NTH = { mail: [0, 0, 1, 1, 1], shred: [0, 1, 2], keycount: [0, 1], tape: [0, 1] };
+  function jump(j) {
+    const S = G.S;
+    if (!S) return;
+    const [name, at, place, task, ev] = j;
+    S.t = G.toM(at);
+    S.place = place;
+    G.data.events.forEach((e) => (S.fired[e.id] = G.toM(e.at) <= S.t));
+    if (ev) S.fired[ev] = false;
+    if (task) {
+      const order = { mail: ['우편함 1', '우편함 2'], shred: ['파쇄 1', '파쇄 2', '파쇄 3'], keycount: ['열쇠 1 + 열쇠 구멍', '열쇠 2'], tape: ['녹화 1', '녹화 2'] }[task];
+      S.done[task + '_n'] = Math.max(0, order.indexOf(name));
+      const h = G.patrolHour(S.t);
+      S.duty[h] = (S.duty[h] || []).filter((x) => x !== task);
+      if (task === 'mail' && S.done[task + '_n'] === 0) S.done.mail = false;
+    }
+    G.ui.hud();
+    G.engine.kick();
+  }
+
   function debugPanel() {
     const box = document.createElement('div');
     box.className = 'debug';
@@ -63,6 +99,9 @@
       ' <button data-v="consent">consent+</button><button data-v="nameExposure">name+</button>' +
       ' <button id="dbg7">7복원</button><button id="dbgKey">F열쇠</button>' +
       ' <select id="dbgEnd"><option value="">엔딩</option><option>A</option><option>B</option><option>C</option><option>D</option><option>E</option></select>' +
+      ' <select id="dbgJump"><option value="">바로 가기</option>' +
+      JUMPS.map((j, i) => '<option value="' + i + '">' + j[0] + '</option>').join('') +
+      '</select>' +
       '<pre id="dbgOut"></pre>';
     document.body.append(box);
     const out = box.querySelector('#dbgOut');
@@ -93,6 +132,10 @@
     box.querySelectorAll('[data-v]').forEach((b) => (b.onclick = () => G.S && G.engine.g.add(b.dataset.v, 1)));
     box.querySelector('#dbg7').onclick = () => G.S && (G.S.restored7 = true);
     box.querySelector('#dbgKey').onclick = () => G.S && ((G.S.hasFKey = true), (G.S.t = Math.max(G.S.t, G.toM('04:30'))));
+    box.querySelector('#dbgJump').onchange = (e) => {
+      if (e.target.value !== '') jump(JUMPS[+e.target.value]);
+      e.target.value = '';
+    };
     box.querySelector('#dbgEnd').onchange = (e) => {
       const c = e.target.value;
       if (!c || !G.S) return;

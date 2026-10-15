@@ -902,6 +902,7 @@
     const row = (k, v) => dl.append(el('dt', null, k), el('dd', null, v));
     row('알아챈 바뀐 수칙', stats.seen + ' / 4');
     row('읽은 서류', stats.docs + ' / 4');
+    row('근무표', stats.duty);
     row('퇴근 시각', stats.time);
     card.append(dl);
     const ol = el('ol', 'e-list');
