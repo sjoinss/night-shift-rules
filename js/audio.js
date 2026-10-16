@@ -143,6 +143,16 @@
       burst(t, 0.025, 0.14, 'bandpass', 3200, 1.5, 0.002);
       buzz(t, 0.1, 0.05);
     },
+    // 불이 나가는 틱. 형광등 웅 소리도 같이 끊겼다가 돌아온다
+    lampCut(t) {
+      burst(t, 0.02, 0.1, 'highpass', 2500, 0.7, 0.002);
+      if (!amb) return;
+      [[amb.hg, 0.006], [amb.hg2, 0.002]].forEach(([g, v]) => {
+        g.gain.cancelScheduledValues(t);
+        g.gain.setValueAtTime(0, t);
+        g.gain.setValueAtTime(v, t + 1.33);
+      });
+    },
     // 마지막 하나가 붙는다: 틱, 그리고 웅 소리가 한 번 부풀었다가 늘 듣던 소리로 가라앉는다
     lampOn(t) {
       burst(t, 0.025, 0.16, 'bandpass', 3200, 1.5, 0.002);
@@ -230,6 +240,119 @@
         tone(62 + Math.random() * 10, d, 0.14, 0.16 * v, 'sine');
         burst(d, 0.06, 0.05 * v, 'lowpass', 500, 0.7, 0.004);
       }
+    },
+    // 동틀 무렵 참새 몇 마리. 짧게 올라갔다 내려오는 휘파람 소리
+    birds(t, v) {
+      const chirp = (s, f0, f1, d, vol) => {
+        const o = ctx.createOscillator();
+        o.frequency.setValueAtTime(f0, s);
+        o.frequency.exponentialRampToValueAtTime(f1, s + d);
+        const g = ctx.createGain();
+        env(g, s, 0.008, vol, d);
+        o.connect(g).connect(master);
+        o.start(s);
+        o.stop(s + d + 0.05);
+      };
+      const s0 = t + 0.6;
+      [
+        [0, 3800, 4700, 0.06],
+        [0.1, 4300, 3500, 0.08],
+        [0.22, 3900, 4800, 0.05],
+        [1.5, 3500, 4400, 0.07],
+        [1.62, 4200, 3400, 0.09],
+        [2.6, 4000, 4900, 0.05],
+      ].forEach(([d, a, b, len]) => chirp(s0 + d, a, b, len, 0.045 * v));
+    },
+    // 비상등 안정기가 붙는 낮은 웅
+    emergOn(t) {
+      const o = ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = 100;
+      const g = ctx.createGain();
+      env(g, t, 0.6, 0.03, 1.4);
+      o.connect(g).connect(master);
+      o.start(t);
+      o.stop(t + 2.1);
+    },
+    // 쇠 손잡이가 잠금쇠에 걸리는 덜컥
+    handle(t, v) {
+      burst(t, 0.04, 0.25 * v, 'bandpass', 1500, 3, 0.003);
+      burst(t + 0.07, 0.05, 0.18 * v, 'bandpass', 1100, 3, 0.003);
+      tone(240, t, 0.08, 0.06 * v, 'triangle');
+    },
+    rattle(t, v) {
+      SFX.handle(t, v);
+      SFX.handle(t + 0.45, v);
+    },
+    // 경첩이 천천히 우는 소리
+    creak(t, v) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.linearRampToValueAtTime(120, t + 1.4);
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 600;
+      bp.Q.value = 4;
+      const g = ctx.createGain();
+      env(g, t, 0.3, 0.05 * v, 1.2);
+      o.connect(bp).connect(g).connect(master);
+      o.start(t);
+      o.stop(t + 1.6);
+    },
+    // 계단 철문이 닫히는 쾅. 쇠판이 조금 울린다
+    slam(t, v) {
+      tone(55, t, 0.7, 0.35 * v, 'sine');
+      burst(t, 0.25, 0.25 * v, 'lowpass', 900, 0.7, 0.003);
+      tone(420, t, 1.2, 0.03 * v, 'triangle');
+      tone(611, t, 1.0, 0.02 * v, 'triangle');
+    },
+    // 열쇠끼리 부딪는 짤랑
+    keys(t, v) {
+      for (let i = 0; i < 5; i++) tone(2200 + Math.random() * 1400, t + i * 0.06 + Math.random() * 0.03, 0.25, 0.03 * v, 'triangle');
+    },
+    // 잠긴 유리문을 두 번 흔드는 소리
+    glass(t, v) {
+      [0, 0.35].forEach((d) => {
+        for (let k = 0; k < 3; k++) burst(t + d + k * 0.045, 0.03, 0.1 * v, 'bandpass', 2800, 2, 0.002);
+        tone(1300, t + d, 0.15, 0.02 * v, 'triangle');
+      });
+    },
+    // 지하에서 올라오는 공회전
+    engine(t, v) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(30, t);
+      o.frequency.linearRampToValueAtTime(42, t + 0.4);
+      o.frequency.linearRampToValueAtTime(38, t + 3);
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 220;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.14 * v, t + 0.35);
+      g.gain.setValueAtTime(0.14 * v, t + 2.4);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 3.4);
+      o.connect(lp).connect(g).connect(master);
+      o.start(t);
+      o.stop(t + 3.5);
+    },
+    // 냉장고 압축기가 한 번 몸을 떨고 멎는다
+    fridge(t, v) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = 50;
+      const lp = ctx.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 300;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.08 * v, t);
+      g.gain.setValueAtTime(0.08 * v, t + 0.6);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      o.connect(lp).connect(g).connect(master);
+      o.start(t);
+      o.stop(t + 1.2);
+      tone(70, t + 0.6, 0.3, 0.15 * v, 'sine');
     },
     knock(t, v) {
       [0, 0.42].forEach((d) => {

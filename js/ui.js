@@ -572,41 +572,81 @@
   }
 
   // ───────── 형광등 ─────────
-  // 스위치를 올리면 두 개는 바로, 하나는 두어 번 깜박이다가 늦게 들어온다.
   // 흰빛을 터뜨리지 않고 밝기만 조금씩 오르내린다. 1초에 세 번 넘게 깜박이지 않는다.
-  // 연출을 끈 사람, 동작 줄이기를 켠 사람에게는 한 번에 부드럽게 밝아지기만 한다.
-  function lampOn() {
+  // 연출을 끈 사람, 동작 줄이기를 켠 사람에게는 calm 쪽(부드럽게 한 번)을 쓴다.
+  // steps: [언제, 밝기, 바뀌는 데 걸리는 시간, 소리]
+  function lamp(from, steps, calmSteps) {
     const b = document.body;
     const set = (v, ms) => {
       b.style.setProperty('--lamp-t', ms + 'ms');
       b.style.setProperty('--lamp', v);
     };
-    b.classList.add('lamp');
-    set(0.45, 0);
     const calm = !G.fx.level() || matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // [언제, 밝기, 바뀌는 데 걸리는 시간, 소리]
-    const steps = calm
-      ? [[300, 1, 1400, 'lampClick']]
-      : [
-          [300, 0.78, 80, 'lampClick'],
-          [800, 0.9, 40, 'lampTick'],
-          [960, 0.76, 120],
-          [1450, 0.94, 40, 'lampTick'],
-          [1560, 0.8, 160],
-          [2100, 1, 60, 'lampOn'],
-        ];
-    steps.forEach(([at, v, ms, s]) =>
+    const list = calm ? calmSteps : steps;
+    b.classList.add('lamp');
+    set(from, 0);
+    list.forEach(([at, v, ms, s]) =>
       setTimeout(() => {
         set(v, ms);
         if (s) G.audio.sfx(s);
       }, at)
     );
-    const last = steps[steps.length - 1];
+    const last = list[list.length - 1];
     setTimeout(() => {
       b.classList.remove('lamp');
       b.style.removeProperty('--lamp');
       b.style.removeProperty('--lamp-t');
     }, last[0] + last[2] + 200);
+  }
+
+  // 스위치를 올리면 두 개는 바로, 하나는 두어 번 깜박이다가 늦게 들어온다
+  function lampOn() {
+    lamp(
+      0.45,
+      [
+        [300, 0.78, 80, 'lampClick'],
+        [800, 0.9, 40, 'lampTick'],
+        [960, 0.76, 120],
+        [1450, 0.94, 40, 'lampTick'],
+        [1560, 0.8, 160],
+        [2100, 1, 60, 'lampOn'],
+      ],
+      [[300, 1, 1400, 'lampClick']]
+    );
+  }
+
+  // 너무 일정한 박자로 아주 조금씩 어두워지다가, 한 번 길게 꺼진다
+  function lampPulse() {
+    const beat = [];
+    for (let i = 0; i < 4; i++) beat.push([i * 1000, 0.93, 150], [i * 1000 + 300, 1, 250]);
+    lamp(
+      1,
+      beat.concat([
+        [4000, 0.4, 60, 'lampCut'],
+        [5300, 1, 80, 'lampTick'],
+      ]),
+      [
+        [0, 0.85, 800],
+        [1600, 1, 800],
+      ]
+    );
+  }
+
+  // 한 번 꺼졌다가, 평소보다 조금 늦게 다시 켜진다
+  function lampDip() {
+    lamp(
+      1,
+      [
+        [0, 0.32, 40, 'lampCut'],
+        [950, 0.85, 40, 'lampTick'],
+        [1080, 0.6, 100],
+        [1350, 1, 60, 'lampOn'],
+      ],
+      [
+        [0, 0.65, 500, 'lampCut'],
+        [1100, 1, 700],
+      ]
+    );
   }
 
   // ───────── 서류 ─────────
@@ -1077,6 +1117,8 @@
     hold,
     blackout,
     lampOn,
+    lampDip,
+    lampPulse,
     openDoc,
     closeDoc,
     rebuildLog,

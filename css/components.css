@@ -441,6 +441,14 @@ body.lamp .photo {
   transition: filter var(--lamp-t, 0ms) ease-out;
 }
 
+/* 03:17 비상등: 깜박이지 않고 붉은빛이 천천히 차오른다 */
+body.emerg #game,
+body.emerg .photo { animation: emergIn 1.4s ease-in; }
+@keyframes emergIn {
+  from { filter: brightness(0.12); }
+  to { filter: brightness(1); }
+}
+
 /* ───────── 서류 시트 ───────── */
 .sheet {
   position: fixed;

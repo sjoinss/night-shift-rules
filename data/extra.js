@@ -29,6 +29,7 @@
   };
 
   S_.glass2F = async (g) => {
+    g.sfx('glass', g.S.place === '2F' ? 1 : 0.35);
     if (g.S.place === '2F') {
       await g.p('가운데 점포 유리문이 안쪽에서 두 번 흔들린다.', '잠금쇠가 덜컥거리다가 가만해진다.', { t: '저 점포 열쇠는 경비실 열쇠함에 걸려 있다.', c: 'th' });
     } else {
@@ -42,12 +43,14 @@
   };
 
   S_.fridge = async (g) => {
+    g.sfx('fridge', g.S.place === 'B1' ? 1 : 0.4);
     if (g.S.place === 'B1') await g.p('식당 셔터 안쪽 냉장고가 마지막으로 크게 한 번 몸을 떨더니 멈춘다.', { t: '그 뒤로 주차장이 귀가 먹먹할 만큼 조용하다.', w: 500 });
     else await g.p({ t: '아래층에서 무언가 꺼지는 소리가 난다.', w: 300 }, '그 뒤로 건물이 한층 더 조용해진다.');
   };
 
   S_.mail402 = async (g) => {
     if (g.S.place !== '1F') return;
+    g.sfx('handle', 0.6);
     await g.p({ t: '등 뒤에서 우편함 뚜껑 하나가 덜컹 닫힌다.', w: 300 }, '돌아보면 402호 칸이다.', { t: g.S.done.mail ? '아까 손을 뻗었던 그 칸이다.' : '이 건물은 3층까지다.', c: 'th', w: 600 });
   };
 
@@ -96,10 +99,12 @@
   };
 
   S_.steps = async (g) => {
+    g.sfx('steps', 0.8);
     await g.p({ t: '머리 위로 발소리가 지나간다.', w: 400 }, '오늘 밤 당신이 돈 순서 그대로다. 계단 앞에서 잠깐 멈칫하는 버릇까지.', { t: '발소리는 당신이 지금 서 있는 자리 바로 위에서 멈춘다.', w: 700 });
   };
 
   S_.flicker = async (g) => {
+    G.ui.lampPulse();
     await g.p('형광등 하나가 너무 일정한 박자로 깜박이기 시작한다.', { t: '저도 모르게 세고 있다. 열일곱 번째마다, 길게 꺼진다.', w: 600 });
   };
 
@@ -109,6 +114,7 @@
   };
 
   S_.carStart = async (g) => {
+    g.sfx('engine', g.S.place === 'B1' ? 1 : 0.45);
     if (g.S.place === 'B1') await g.p('주차장 안쪽에서 시동 거는 소리가 나는데, 둘러봐도 차는 한 대도 없다.', { t: '배기가스 냄새만 매캐하게 남는다.', w: 600 });
     else await g.p({ t: '지하에서 차 시동 거는 소리가 올라온다.', w: 400 }, '차 한 대 없는 지하에서, 엔진 소리가 한참 공회전하다가 꺼진다.');
   };
@@ -117,6 +123,7 @@
   S_.keysClink = async (g) => {
     const S = g.S;
     if (S.hasFKey || S.fDone || S.fFailed) return;
+    if (S.place === '경비실') g.sfx('keys');
     if (S.place === '경비실') await g.p({ t: '열쇠함 쪽에서 쇠붙이끼리 부딪는 소리가 한 번 난다.', w: 300 }, { t: '창문이 닫혀 있어서 바람이 들 데가 없다.', c: 'th' });
     else {
       g.sfx('static', 0.4);
@@ -310,9 +317,11 @@
   S_.knock = async (g) => {
     const S = g.S;
     const door = S.place === '경비실' ? '경비실 문' : '등 뒤 계단 문';
+    await g.p({ t: door + '을 누가 두드린다.', w: 300 });
+    await g.wait(500);
+    g.sfx('knock');
     await g.p(
-      { t: door + '을 누가 두드린다.', w: 300 },
-      { t: '똑. 똑.', s: 'slow', w: 600 },
+      { t: '똑. 똑.', s: 'slow', w: 100 },
       S.place === '경비실' ? { t: '안에서 잠가 둔 문이고, 문밖은 불 꺼진 로비다.', c: 'th' } : { t: '방금 지나온 문이다.', c: 'th' },
       { t: '"아저씨. 문 좀 열어 주세요."', s: 'slow', w: 500 },
       '높고 가는, 아이 목소리다.',
@@ -365,10 +374,14 @@
     avail: (S) => !!S.flags.lockDue && !S.flags.lockDone,
     run: async (g) => {
       g.S.flags.lockDone = true;
+      await g.p('손잡이를 잡고 돌려 보니 잠겨 있다.');
+      await g.wait(500);
+      g.sfx('handle');
+      await g.p({ t: '손을 떼려는데 손잡이가 덜컹 돌아간다. 바깥쪽에서.' });
+      await g.wait(300);
+      g.sfx('rattle');
       await g.p(
-        '손잡이를 잡고 돌려 보니 잠겨 있다.',
-        { t: '손을 떼려는데 손잡이가 덜컹 돌아간다. 바깥쪽에서.', w: 500 },
-        { t: '덜컹. 덜컹.', s: 'slow', w: 300 },
+        { t: '덜컹. 덜컹.', s: 'slow' },
         '잠금쇠에 걸려 반 바퀴에서 멈춘다.',
         { t: '세 번째는 없지만, 문 앞에서 비켜서는 기척도 없다.', w: 900 }
       );
@@ -379,6 +392,7 @@
     const S = g.S;
     if (S.place !== '경비실') {
       g.add('consent', 1);
+      g.sfx('creak', 0.35);
       await g.p(
         { t: '아래층에서 문 하나가 천천히 열리는 소리.', w: 400 },
         { t: '경비실 쪽이다.', c: 'th' },
@@ -386,6 +400,7 @@
       );
       return;
     }
+    g.sfx('creak');
     await g.p(
       { t: '등 뒤에서 문이 열리는 소리.', w: 300 },
       '찬 바람이 발목에 닿는다.',
