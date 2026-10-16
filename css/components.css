@@ -38,7 +38,7 @@
   color: var(--fluo);
 }
 .title-b:hover { border-bottom-color: var(--fluo); }
-.quiet-b { color: var(--fluo-dim); font-size: 1rem; }
+.quiet-b { color: var(--fluo-dim); }
 
 /* ───────── LCD 시계 ───────── */
 .lcd-case {
@@ -445,11 +445,14 @@ body.emerg #desk .tag { opacity: 0.35; }
   background: rgba(8, 12, 11, 0.62);
 }
 .paper {
+  --pad-t: var(--s6);
+  --pad-x: var(--s6);
   position: relative;
   width: min(100%, 38rem);
   max-height: 90vh;
   overflow-y: auto;
-  padding: var(--s6) var(--s6) var(--s6);
+  overflow-x: hidden;
+  padding: var(--pad-t) var(--pad-x) var(--s6);
   background-color: var(--paper);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .27 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   color: var(--ink);
@@ -465,7 +468,7 @@ body.emerg #desk .tag { opacity: 0.35; }
   z-index: 2;
   top: 0;
   float: right;
-  margin: -28px -24px 0 8px;
+  margin: calc(8px - var(--pad-t)) calc(8px - var(--pad-x)) 0 8px;
   background-color: inherit;
   min-height: 40px;
   padding: 4px 10px;
@@ -793,13 +796,14 @@ body.emerg #desk .tag { opacity: 0.35; }
     min-height: 34px;
   }
   .slip:hover { transform: translateY(-2px); }
-  .desk-set { order: 4; margin: 0; }
+  .lcd-case, .tag, .desk-set { align-self: center; }
+  .desk-set { order: 4; margin: 0; min-height: 34px; padding: 0 var(--s1); line-height: 1; }
   #log { padding: var(--s5) var(--s4) var(--s2); }
   #dock { padding: var(--s2) var(--s4) 24vh; }
   .menu { grid-template-columns: minmax(0, 1fr); gap: var(--s3); }
   .floors { flex-direction: row; flex-wrap: wrap; }
   .floor { flex: 1 1 30%; flex-direction: column; align-items: flex-start; border-bottom: 0; border-right: 1px solid #3a2e24; min-height: 48px; padding: 4px 8px; font-size: 0.85rem; line-height: 1.3; }
-  .paper { padding: var(--s6) var(--s4) var(--s5); max-height: 88vh; }
+  .paper { --pad-x: var(--s4); padding-bottom: var(--s5); max-height: 88%; }
   .paper.p-jung { border-left-width: 10px; }
   .title-inner, .ending-card { margin-left: 0; }
   .lcd-case.big .lcd { width: 170px; }
@@ -1013,6 +1017,7 @@ body.dark #stage::-webkit-scrollbar-thumb { background-color: #1a1a1a; }
 .act .lbl { max-width: none; flex: 0 1 auto; }
 @media (max-width: 640px) {
   .acts { grid-template-columns: minmax(0, 1fr); }
+  .set-row legend { float: none; width: 100%; margin-bottom: 2px; }
   .floor { min-height: 42px; padding: 3px 2px; font-size: 0.82rem; }
 }
 
@@ -1152,7 +1157,7 @@ body.emerg #desk .duty { opacity: 0.35; }
   .duty-l { flex: 1; min-width: 0; display: flex; gap: 12px; overflow: hidden; white-space: nowrap; }
   .duty-l li.done { display: none; }
   .duty.open { flex-wrap: wrap; }
-  .duty.open .duty-l { flex-basis: 100%; flex-direction: column; gap: 0; white-space: normal; padding-bottom: 4px; }
+  .duty.open .duty-l { flex-basis: 100%; flex-direction: column; gap: 0; white-space: normal; padding-bottom: 4px; max-height: 28vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--ink-soft) transparent; }
   .duty.open .duty-l li.done { display: block; }
 }
 
@@ -1437,3 +1442,12 @@ body.emerg .art-pre { color: var(--emerg-ink); }
 .hold-go.down::after { width: 100%; transition: width 1.2s linear; }
 .hold-go.tap::after { animation: tapfill 0.5s ease-out; }
 @keyframes tapfill { 30% { width: 22%; } 100% { width: 0; } }
+
+/* 폰 키보드가 올라와 있는 동안: 보이는 만큼만 쓰고, 사진·서류 탭·근무표는 잠시 접는다 */
+body.kb {
+  height: var(--vh, 100%);
+  transform: translateY(var(--vt, 0));
+}
+body.kb .photo,
+body.kb #desk .tabs,
+body.kb #desk .duty { display: none; }

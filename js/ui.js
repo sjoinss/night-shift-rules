@@ -213,7 +213,6 @@
     o = o || {};
     const { p, vis } = makeLine(raw, cls, o);
     R.log.append(p);
-    if (!R.batchStart) R.batchStart = p;
     scrollDown();
     const pc = pace(raw, cls, o);
     const ms = BASE[G.settings.speed] * pc.k;
@@ -250,18 +249,17 @@
   // 미니게임: 본문에 붙는 덩어리, 선택 칸에 붙는 조작부
   function block(node) {
     R.log.append(node);
-    R.batchStart = node;
     scrollDown();
   }
   function controls(node, keys) {
-    clearDock(true);
+    clearDock();
     R.dock.append(node);
     settle();
     keyMap = keys || null;
     R.dock.focus({ preventScroll: true });
   }
   function release() {
-    clearDock(true);
+    clearDock();
   }
 
   function staticLine(raw, cls) {
@@ -277,27 +275,26 @@
   }
 
   // ───────── 선택지 ─────────
-  // keep: 새 선택지를 그리기 직전엔 '방금 나온 글' 표시를 지우지 않는다
-  function clearDock(keep) {
+  function clearDock() {
     R.dock.textContent = '';
     keyMap = null;
-    if (!keep) R.batchStart = null;
   }
 
-  // 선택지가 붙으면 맨 아래로 내리되, 방금 나온 글의 첫 줄은 화면 안에 남긴다
+  // 선택지가 붙으면 선택지 끝이 화면 아래에 오게 내린다.
+  // 선택지가 화면보다 길면 선택지 첫머리부터 보인다.
   function settle() {
     hud();
     const sc = R.scroller;
-    // 아래 여백은 빼고, 선택지 끝이 화면 아래에 오게
-    const padB = parseFloat(getComputedStyle(R.dock).paddingBottom) || 0;
+    const cs = getComputedStyle(R.dock);
+    const padB = parseFloat(cs.paddingBottom) || 0;
     const bottom = Math.max(0, sc.scrollHeight - sc.clientHeight - padB);
-    const first = R.batchStart && R.batchStart.isConnected ? R.batchStart.offsetTop - 28 : bottom;
-    sc.scrollTop = Math.max(0, Math.min(bottom, first));
+    const top = R.dock.offsetTop + (parseFloat(cs.paddingTop) || 0) - 12;
+    sc.scrollTop = Math.max(0, Math.min(bottom, top));
   }
 
   function choose(list) {
     return new Promise((resolve) => {
-      clearDock(true);
+      clearDock();
       const ol = el('ol', 'choices');
       const keys = {};
       const amb = G.S && G.S.consent >= 2 ? (G.S.consent >= 3 ? 0.08 : 0.04) : 0;
@@ -341,7 +338,7 @@
   // 선택지가 하나씩 같은 말로 바뀐다. 아무것도 누르지 않고 버티면 'wait'
   function same(o) {
     return new Promise((resolve) => {
-      clearDock(true);
+      clearDock();
       const ol = el('ol', 'choices same');
       const timers = [];
       let done = false;
@@ -419,7 +416,7 @@
 
   function menu(m) {
     return new Promise((resolve) => {
-      clearDock(true);
+      clearDock();
       const wrap = el('div', 'menu');
       const acts = el('ul', 'acts');
       const keys = {};
@@ -464,7 +461,7 @@
 
   function ask(o) {
     return new Promise((resolve) => {
-      clearDock(true);
+      clearDock();
       const f = el('form', 'ask');
       const lab = el('label', 'ask-l');
       lab.append(el('span', 'sr-only', o.label || o.placeholder));
@@ -516,7 +513,7 @@
       return choose(opts);
     }
     return new Promise((resolve) => {
-      clearDock(true);
+      clearDock();
       const box = el('div', 'hold');
       const b = el('button', 'hold-b', '응답');
       b.type = 'button';
@@ -920,6 +917,33 @@
     b.focus({ preventScroll: true });
   }
 
+  // ───────── 폰 키보드 ─────────
+  // 키보드가 올라오면 보이는 높이에 화면을 맞추고, 입력 칸과 선택지를 다시 화면 안으로 올린다
+  function fitViewport() {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    let full = vv.height;
+    const fit = () => {
+      if (vv.height > full) full = vv.height;
+      const a = document.activeElement;
+      const typingField = a && /INPUT|TEXTAREA/.test(a.tagName);
+      const kb = typingField && vv.height < full - 120;
+      root.style.setProperty('--vh', vv.height + 'px');
+      root.style.setProperty('--vt', vv.offsetTop + 'px');
+      document.body.classList.toggle('kb', kb);
+      if (!typingField) return;
+      if (R.dock.contains(a)) settle();
+      else a.scrollIntoView({ block: 'nearest' });
+    };
+    vv.addEventListener('resize', fit);
+    vv.addEventListener('scroll', fit);
+    window.addEventListener('orientationchange', () => {
+      full = 0;
+    });
+    document.addEventListener('focusout', () => setTimeout(fit, 50));
+  }
+
   // ───────── 초기화 ─────────
   function init() {
     R = {
@@ -952,6 +976,8 @@
     R.sheet.addEventListener('click', (e) => {
       if (e.target === R.sheet) closeDoc();
     });
+
+    fitViewport();
 
     R.scroller.addEventListener('click', (e) => {
       if (e.target.closest('#dock')) return;
