@@ -261,6 +261,8 @@
     const bar = el('span', 'tug-bar');
     bar.setAttribute('aria-hidden', 'true');
     const hb = holdButton('당긴다', '1');
+    // 막대를 먼저 채워 둬야 자리를 잡은 뒤에 줄이 넘어가지 않는다
+    bar.textContent = '▯'.repeat(16);
     wrap.append(hb.b, bar);
     G.ui.controls(wrap, { 1: hb.b });
     let p = 0.15;

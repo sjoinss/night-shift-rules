@@ -153,6 +153,12 @@
     box.append(head, ul);
   }
 
+  function closeDuty() {
+    R.duty.classList.remove('open');
+    const h = R.duty.querySelector('.duty-h');
+    if (h) h.setAttribute('aria-expanded', 'false');
+  }
+
   // ───────── 로그 ─────────
   const BASE = { slow: 55, normal: 30, fast: 12, instant: 0 };
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -287,7 +293,8 @@
     const sc = R.scroller;
     const cs = getComputedStyle(R.dock);
     const padB = parseFloat(cs.paddingBottom) || 0;
-    const bottom = Math.max(0, sc.scrollHeight - sc.clientHeight - padB);
+    // 마지막 줄이 화면 끝에 딱 붙지 않게 조금 띄운다
+    const bottom = Math.max(0, sc.scrollHeight - sc.clientHeight - padB + 20);
     const top = R.dock.offsetTop + (parseFloat(cs.paddingTop) || 0) - 12;
     sc.scrollTop = Math.max(0, Math.min(bottom, top));
   }
@@ -564,6 +571,44 @@
     hud();
   }
 
+  // ───────── 형광등 ─────────
+  // 스위치를 올리면 두 개는 바로, 하나는 두어 번 깜박이다가 늦게 들어온다.
+  // 흰빛을 터뜨리지 않고 밝기만 조금씩 오르내린다. 1초에 세 번 넘게 깜박이지 않는다.
+  // 연출을 끈 사람, 동작 줄이기를 켠 사람에게는 한 번에 부드럽게 밝아지기만 한다.
+  function lampOn() {
+    const b = document.body;
+    const set = (v, ms) => {
+      b.style.setProperty('--lamp-t', ms + 'ms');
+      b.style.setProperty('--lamp', v);
+    };
+    b.classList.add('lamp');
+    set(0.45, 0);
+    const calm = !G.fx.level() || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // [언제, 밝기, 바뀌는 데 걸리는 시간, 소리]
+    const steps = calm
+      ? [[300, 1, 1400, 'lampClick']]
+      : [
+          [300, 0.78, 80, 'lampClick'],
+          [800, 0.9, 40, 'lampTick'],
+          [960, 0.76, 120],
+          [1450, 0.94, 40, 'lampTick'],
+          [1560, 0.8, 160],
+          [2100, 1, 60, 'lampOn'],
+        ];
+    steps.forEach(([at, v, ms, s]) =>
+      setTimeout(() => {
+        set(v, ms);
+        if (s) G.audio.sfx(s);
+      }, at)
+    );
+    const last = steps[steps.length - 1];
+    setTimeout(() => {
+      b.classList.remove('lamp');
+      b.style.removeProperty('--lamp');
+      b.style.removeProperty('--lamp-t');
+    }, last[0] + last[2] + 200);
+  }
+
   // ───────── 서류 ─────────
   const DOCS = {
     rules: { label: '수칙', cls: 'p-rules' },
@@ -586,6 +631,7 @@
       R.sheet.hidden = false;
       R.sheet.setAttribute('aria-label', DOCS[name].label);
       document.body.classList.add('sheet-open');
+      setInert(true);
       R.paper.scrollTop = 0;
       if (sub === 'back') {
         const t = $('#jung-back', R.paperBody);
@@ -594,10 +640,18 @@
       R.sheetClose.focus({ preventScroll: true });
     });
   }
+  // 서류가 열려 있는 동안 뒤 화면은 키보드·화면 낭독기로 닿지 않게
+  function setInert(on) {
+    ['#title', '#game', '#ending', '#photo'].forEach((s) => {
+      const e = $(s);
+      if (e) e.inert = on;
+    });
+  }
   function closeDoc() {
     if (!docOpen) return;
     R.sheet.hidden = true;
     document.body.classList.remove('sheet-open');
+    setInert(false);
     docOpen = null;
     const r = docResolve;
     docResolve = null;
@@ -973,6 +1027,10 @@
       else openDoc(b.dataset.doc);
     });
     R.sheetClose.addEventListener('click', closeDoc);
+    // 좁은 화면에서 내려온 근무표는 바깥을 누르면 다시 접힌다
+    document.addEventListener('click', (e) => {
+      if (R.duty.classList.contains('open') && !R.duty.contains(e.target)) closeDuty();
+    });
     R.sheet.addEventListener('click', (e) => {
       if (e.target === R.sheet) closeDoc();
     });
@@ -984,6 +1042,10 @@
       if (typing) skipping = true;
     });
     document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && R.duty.classList.contains('open')) {
+        closeDuty();
+        return;
+      }
       if (e.key === 'Escape' && docOpen) {
         closeDoc();
         return;
@@ -1014,6 +1076,7 @@
     ask,
     hold,
     blackout,
+    lampOn,
     openDoc,
     closeDoc,
     rebuildLog,

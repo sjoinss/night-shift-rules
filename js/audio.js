@@ -114,7 +114,41 @@
     }, (fade || 0.02) * 1000 + 100);
   }
 
+  // 형광등 안정기가 붙는 '지잉': 120Hz 톱니파를 낮게 거른다
+  function buzz(t0, dur, vol, hold) {
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = 120;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 700;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+    if (hold) g.gain.setValueAtTime(vol, t0 + hold);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + (hold || 0.02) + dur);
+    o.connect(lp).connect(g).connect(master);
+    o.start(t0);
+    o.stop(t0 + (hold || 0.02) + dur + 0.05);
+  }
+
   const SFX = {
+    // 벽 스위치를 올리는 딸깍
+    lampClick(t) {
+      burst(t, 0.03, 0.3, 'highpass', 2500, 0.7, 0.002);
+      tone(160, t, 0.06, 0.12, 'sine');
+    },
+    // 점등관이 튀는 틱, 잠깐 붙었다 떨어지는 지잉
+    lampTick(t) {
+      burst(t, 0.025, 0.14, 'bandpass', 3200, 1.5, 0.002);
+      buzz(t, 0.1, 0.05);
+    },
+    // 마지막 하나가 붙는다: 틱, 그리고 웅 소리가 한 번 부풀었다가 늘 듣던 소리로 가라앉는다
+    lampOn(t) {
+      burst(t, 0.025, 0.16, 'bandpass', 3200, 1.5, 0.002);
+      buzz(t, 2.4, 0.06, 0.25);
+      tone(240, t, 2.2, 0.012, 'triangle');
+    },
     page(t) {
       burst(t, 0.18, 0.35, 'bandpass', 2600, 0.8, 0.02);
       burst(t + 0.16, 0.12, 0.2, 'bandpass', 3400, 0.8, 0.01);
